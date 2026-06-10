@@ -100,7 +100,12 @@ export default function AdminDashboardScreen() {
             />
           }
         >
-          <DataTable columns={signupColumns} data={recentSignups} keyExtractor={(u) => u.id} />
+          <DataTable
+            columns={signupColumns}
+            data={recentSignups}
+            keyExtractor={(u) => u.id}
+            emptyText="Henüz kullanıcı kaydı bulunmuyor."
+          />
         </AdminCard>
 
         <AdminCard
@@ -108,7 +113,12 @@ export default function AdminDashboardScreen() {
           subtitle="Uygulamayı en son kullananlar"
           style={styles.tableCard}
         >
-          <DataTable columns={activeColumns} data={recentActive} keyExtractor={(u) => u.id} />
+          <DataTable
+            columns={activeColumns}
+            data={recentActive}
+            keyExtractor={(u) => u.id}
+            emptyText="Henüz aktivite kaydı bulunmuyor."
+          />
         </AdminCard>
       </View>
 
@@ -142,13 +152,21 @@ export default function AdminDashboardScreen() {
             />
             <SystemRow
               label="Ödeme Sistemi"
-              value={state.settings.paymentsEnabled ? 'Bağlı' : 'Kurulum bekliyor'}
+              value={
+                state.settings.paymentsEnabled
+                  ? 'Mağaza abonelikleri bağlı'
+                  : 'Mağaza hesabı gerekli (RevenueCat)'
+              }
               ok={state.settings.paymentsEnabled}
             />
             <SystemRow
-              label="Push Bildirim"
-              value={state.settings.pushEnabled ? 'Bağlı' : 'Kurulum bekliyor'}
-              ok={state.settings.pushEnabled}
+              label="Bildirimler"
+              value={
+                state.settings.pushEnabled
+                  ? 'Uzak push bağlı'
+                  : 'Yerel bildirim aktif'
+              }
+              ok
             />
           </View>
         </AdminCard>

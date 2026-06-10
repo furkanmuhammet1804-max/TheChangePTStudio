@@ -50,21 +50,56 @@ export default function SettingsScreen() {
 
     if (value) {
       const granted = await requestNotificationPermission();
-      if (granted && key === 'workoutReminders') {
-        // Mock zamanlama — gerçek push backend bağlanınca sunucudan tetiklenecek
+      if (!granted) {
+        notify(
+          'Bildirim İzni Gerekli',
+          'Bildirimleri alabilmek için cihaz ayarlarından uygulamaya bildirim izni vermelisin.',
+        );
+        return;
+      }
+      if (key === 'workoutReminders') {
         await scheduleLocalNotification('workout_reminder', { secondsFromNow: 10 });
-        notify('Hatırlatma Açık', 'Deneme bildirimi birazdan gelecek.');
+        notify('Hatırlatmalar Açık', 'İlk hatırlatma bildirimi birazdan gelecek.');
+      } else if (key === 'motivation') {
+        await scheduleLocalNotification('motivation', { secondsFromNow: 15 });
+        notify('Motivasyon Açık', 'İlk motivasyon bildirimi birazdan gelecek.');
       }
     } else if (key === 'workoutReminders') {
       await cancelAllScheduled();
     }
   };
 
+  const handleTestNotification = async () => {
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      notify(
+        'Bildirim İzni Gerekli',
+        'Deneme bildirimi için cihaz ayarlarından bildirim izni vermelisin.',
+      );
+      return;
+    }
+    const ok = await scheduleLocalNotification('motivation', {
+      title: 'Deneme Bildirimi',
+      body: 'Bildirimler çalışıyor. Antrenman hatırlatmaların artık cihazına düşecek.',
+      secondsFromNow: 5,
+    });
+    notify(
+      ok ? 'Gönderildi' : 'Gönderilemedi',
+      ok
+        ? 'Deneme bildirimi 5 saniye içinde gelecek.'
+        : 'Bu platformda yerel bildirim desteklenmiyor (web). Telefonda dene.',
+    );
+  };
+
   const handleHealthPress = (p: HealthProviderInfo) => {
     if (p.status === 'unavailable') {
       notify(p.label, 'Bu entegrasyon bu cihazda kullanılamıyor.');
     } else {
-      notify(p.label, 'Sağlık platformu entegrasyonu yakında eklenecek.');
+      notify(
+        p.label,
+        `${p.label} bağlantısı native build gerektirir (Expo Go'da çalışmaz). ` +
+          'Servis katmanı hazır; mağaza sürümünde sağlık verisi senkronizasyonu etkinleştirilecek.',
+      );
     }
   };
 
@@ -131,6 +166,11 @@ export default function SettingsScreen() {
             value={prefs.productNews}
             onChange={(v) => updatePref('productNews', v)}
           />
+          <SettingsRow
+            icon="paper-plane-outline"
+            label="Deneme Bildirimi Gönder"
+            onPress={handleTestNotification}
+          />
         </View>
 
         {/* Sağlık entegrasyonları */}
@@ -141,7 +181,7 @@ export default function SettingsScreen() {
               key={p.provider}
               icon={p.provider === 'apple_health' ? 'heart-outline' : 'fitness-outline'}
               label={p.label}
-              badge={p.status === 'unavailable' ? 'Bu cihazda yok' : 'Yakında'}
+              badge={p.status === 'unavailable' ? 'Bu cihazda yok' : 'Native build gerekli'}
               onPress={() => handleHealthPress(p)}
             />
           ))}
@@ -154,13 +194,17 @@ export default function SettingsScreen() {
             icon="language-outline"
             label="Dil"
             badge="Türkçe"
-            onPress={() => notify('Dil', 'Çoklu dil desteği yakında eklenecek.')}
+            onPress={() =>
+              notify('Dil', 'Uygulama Türkçe olarak sunuluyor. Egzersiz adları uluslararası standart gereği İngilizcedir.')
+            }
           />
           <SettingsRow
             icon="moon-outline"
             label="Tema"
             badge="Koyu"
-            onPress={() => notify('Tema', 'Tema seçenekleri yakında eklenecek.')}
+            onPress={() =>
+              notify('Tema', 'The Change PT Studio, antrenman odağı için koyu temayla tasarlandı.')
+            }
           />
         </View>
 

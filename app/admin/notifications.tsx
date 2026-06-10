@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FormField } from '@/src/components/admin/forms';
 import { AdminButton, AdminCard, PageHeader, StatusBadge } from '@/src/components/admin/ui';
 import { AUDIENCE_LABELS } from '@/src/constants/strings';
@@ -49,8 +49,13 @@ export default function AdminNotificationsScreen() {
       setBody('');
       notify(
         'Bildirim Gönderildi',
-        `"${campaign.title}" — ${AUDIENCE_LABELS[audience]} (${campaign.reach} kullanıcı).` +
-          (settings.pushEnabled ? '' : ' Push servisi bağlanana kadar gönderim kayıt amaçlıdır.'),
+        `"${campaign.title}" — ${AUDIENCE_LABELS[audience]} (${campaign.reach} kullanıcı). ` +
+          (Platform.OS === 'web'
+            ? 'Kampanya kaydedildi; mobil cihazlarda yerel bildirim olarak teslim edilir.'
+            : 'Bildirim birazdan bu cihaza düşecek.') +
+          (settings.pushEnabled
+            ? ''
+            : ' Tüm kullanıcı cihazlarına eşzamanlı dağıtım, push sunucusu bağlandığında başlar.'),
       );
     } finally {
       setSending(false);

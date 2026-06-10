@@ -15,9 +15,9 @@ import { exercises as exerciseCatalog } from '@/src/data/exercises';
 import { programs as programCatalog } from '@/src/data/programs';
 import { workouts as workoutCatalog } from '@/src/data/workouts';
 import {
-  buildSeedCampaigns,
-  buildSeedSubscriptions,
-  buildSeedUsers,
+  LEGACY_DEMO_CAMPAIGN_IDS,
+  LEGACY_DEMO_SUBSCRIPTION_IDS,
+  LEGACY_DEMO_USER_IDS,
 } from '@/src/data/seed';
 import {
   AdminUserTier,
@@ -226,14 +226,19 @@ async function doInit() {
     persisted = null;
   }
 
-  if (!persisted) {
-    persisted = {
-      ...emptyPersisted(),
-      users: buildSeedUsers(),
-      subscriptions: buildSeedSubscriptions(),
-      campaigns: buildSeedCampaigns(),
-    };
-  }
+  if (!persisted) persisted = emptyPersisted();
+
+  // Önceki sürümlerin yazdığı demo kullanıcı/abonelik/kampanya kayıtlarını
+  // temizle — gerçek (cihazda oluşturulmuş) kayıtlar korunur.
+  persisted = {
+    ...persisted,
+    users: persisted.users.filter((u) => !LEGACY_DEMO_USER_IDS.has(u.id)),
+    subscriptions: persisted.subscriptions.filter(
+      (s) => !LEGACY_DEMO_SUBSCRIPTION_IDS.has(s.id) && !LEGACY_DEMO_USER_IDS.has(s.userId),
+    ),
+    campaigns: persisted.campaigns.filter((c) => !LEGACY_DEMO_CAMPAIGN_IDS.has(c.id)),
+    // Demo kullanıcılara yapılmış program atamaları da geçersiz — kullanıcılar zaten silindi
+  };
 
   // Süresi geçmiş abonelikleri kapat, üyelikleri düşür
   const reconciled = reconcileSubscriptions(persisted);
@@ -674,20 +679,16 @@ export function updateAppSettings(patch: Partial<AppSettings>): void {
   update({ settings: { ...state.settings, ...patch } });
 }
 
-/** Yerel demo verisini sıfırlar (seed'e döner). Backend geçişinde kalkacak. */
+/** Yerel yönetim verisini sıfırlar: kullanıcı/üyelik/kampanya kayıtları ve
+ *  içerik değişiklikleri silinir, katalog varsayılana döner. */
 export async function resetLocalData(): Promise<void> {
   await AsyncStorage.removeItem(STORE_KEY);
-  const seeded: PersistedState = {
-    ...emptyPersisted(),
-    users: buildSeedUsers(),
-    subscriptions: buildSeedSubscriptions(),
-    campaigns: buildSeedCampaigns(),
-  };
+  const empty = emptyPersisted();
   state = {
-    ...seeded,
+    ...empty,
     ready: true,
-    exercises: mergeExercises(seeded),
-    programs: mergePrograms(seeded),
+    exercises: mergeExercises(empty),
+    programs: mergePrograms(empty),
   };
   emit();
   void persist();

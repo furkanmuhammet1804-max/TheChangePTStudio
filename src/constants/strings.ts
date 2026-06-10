@@ -218,15 +218,13 @@ export const PREMIUM_BENEFITS = [
     desc: 'Tamamlanan antrenmanlar ve haftalık gelişim raporları',
   },
   {
-    icon: 'sparkles-outline' as const,
-    label: 'Yapay Zeka Koç',
-    desc: 'Antrenmanlarına göre kişisel öneriler',
-    comingSoon: true,
+    icon: 'swap-horizontal-outline' as const,
+    label: 'Hareket değiştirme',
+    desc: 'Antrenman sırasında hareketleri alternatifleriyle değiştir',
   },
   {
-    icon: 'restaurant-outline' as const,
-    label: 'Beslenme Bölümü',
-    desc: 'Hedefe uygun beslenme rehberi',
-    comingSoon: true,
+    icon: 'images-outline' as const,
+    label: 'Önce / sonra takibi',
+    desc: 'Dönüşüm fotoğraflarınla değişimini belgele',
   },
 ];

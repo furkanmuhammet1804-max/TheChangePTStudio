@@ -1,9 +1,14 @@
 /**
  * Sağlık platformu entegrasyon servisi (Apple Health / Google Fit).
  *
- * Şu an gerçek entegrasyon YOK — ayarlar ekranındaki placeholder'lar bu
- * servisi çağırır. İleride react-native-health / Health Connect bağlandığında
- * sadece bu modülün gövdesi değişir; UI aynı kalır.
+ * GERÇEK ENTEGRASYON GEREKSİNİMLERİ (Expo Go'da ÇALIŞMAZ, native build ister):
+ *  - iOS  : `react-native-health` (HealthKit) + app.json'da HealthKit
+ *           entitlement + NSHealthShareUsageDescription → EAS dev/prod build
+ *  - Android: `react-native-health-connect` (Health Connect API, Android 14+)
+ *           veya Google Fit REST — yine EAS native build gerektirir
+ *
+ * Bu yüzden UI sahte "bağlandı" göstermez; durum dürüstçe bildirilir.
+ * Paketler eklendiğinde yalnızca bu modülün gövdesi değişir; UI aynı kalır.
  */
 import { Platform } from 'react-native';
 

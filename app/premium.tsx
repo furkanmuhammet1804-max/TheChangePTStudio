@@ -12,34 +12,53 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@/src/contexts/UserContext';
 import { PREMIUM_BENEFITS } from '@/src/constants/strings';
+import { listPlans, purchasePlan } from '@/src/services/paymentService';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
+import { SubscriptionPlanId } from '@/src/types/admin';
+import { formatShortDate } from '@/src/utils/formatters';
+import { hapticSuccess } from '@/src/utils/haptics';
 
-const PLANS = [
-  { id: 'monthly', label: 'Aylık', price: '₺299', period: '/ay', popular: false },
-  { id: 'quarterly', label: '3 Aylık', price: '₺749', period: '/3 ay', popular: true, badge: 'En İyi Değer' },
-  { id: 'yearly', label: 'Yıllık', price: '₺2.199', period: '/yıl', popular: false },
-];
+const PLAN_PERIOD_LABELS: Record<SubscriptionPlanId, string> = {
+  monthly: '/ay',
+  quarterly: '/3 ay',
+  yearly: '/yıl',
+};
+
+const PLANS = listPlans().map((p) => ({
+  id: p.id,
+  label: p.label,
+  price: `₺${p.priceTRY.toLocaleString('tr-TR')}`,
+  period: PLAN_PERIOD_LABELS[p.id],
+  popular: p.id === 'quarterly',
+  badge: p.id === 'quarterly' ? 'En İyi Değer' : undefined,
+}));
 
 export default function PremiumScreen() {
   const { isPremium, setMembership } = useUser();
-  const [selectedPlan, setSelectedPlan] = useState('quarterly');
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlanId>('quarterly');
+  const [purchasing, setPurchasing] = useState(false);
 
-  const handlePurchase = () => {
-    // Ödeme altyapısı henüz hazır değil — şimdilik önizleme olarak premium açılır
-    Alert.alert(
-      'Ödeme sistemi hazırlanıyor',
-      'Çok yakında! Şimdilik Premium deneyimini ücretsiz önizleme olarak açabilirsin.',
-      [
-        { text: 'Vazgeç', style: 'cancel' },
-        {
-          text: 'Önizlemeyi Aç',
-          onPress: async () => {
-            await setMembership('premium');
-            router.back();
-          },
-        },
-      ],
-    );
+  const handlePurchase = async () => {
+    if (purchasing) return;
+    setPurchasing(true);
+    try {
+      const result = await purchasePlan(selectedPlan);
+      if (!result.success) {
+        Alert.alert('Satın Alma Başarısız', result.error ?? 'Lütfen tekrar dene.');
+        return;
+      }
+      await setMembership('premium');
+      hapticSuccess();
+      Alert.alert(
+        'Premium Aktif',
+        result.expiresAt
+          ? `Üyeliğin ${formatShortDate(result.expiresAt)} tarihine kadar geçerli. İyi antrenmanlar!`
+          : 'Premium üyeliğin aktifleşti. İyi antrenmanlar!',
+        [{ text: 'Başla', onPress: () => router.back() }],
+      );
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   return (
@@ -81,14 +100,7 @@ export default function PremiumScreen() {
                 <Ionicons name={f.icon} size={22} color={colors.gold} />
               </View>
               <View style={styles.featureInfo}>
-                <View style={styles.featureLabelRow}>
-                  <Text style={styles.featureLabel}>{f.label}</Text>
-                  {f.comingSoon && (
-                    <View style={styles.soonBadge}>
-                      <Text style={styles.soonBadgeText}>YAKINDA</Text>
-                    </View>
-                  )}
-                </View>
+                <Text style={styles.featureLabel}>{f.label}</Text>
                 <Text style={styles.featureDesc}>{f.desc}</Text>
               </View>
             </View>
@@ -129,9 +141,13 @@ export default function PremiumScreen() {
               style={styles.ctaBtn}
               onPress={handlePurchase}
               activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Premium üyeliği başlat"
             >
               <Ionicons name="star" size={18} color={colors.background} />
-              <Text style={styles.ctaLabel}>PREMIUM&apos;U BAŞLAT</Text>
+              <Text style={styles.ctaLabel}>
+                {purchasing ? 'İŞLENİYOR...' : "PREMIUM'U BAŞLAT"}
+              </Text>
             </TouchableOpacity>
 
             <Text style={styles.disclaimer}>
@@ -212,16 +228,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   featureInfo: { flex: 1 },
-  featureLabelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   featureLabel: { ...typography.bodyMedium, color: colors.text },
   featureDesc: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
-  soonBadge: {
-    backgroundColor: colors.goldMuted,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  },
-  soonBadgeText: { ...typography.caption, color: colors.gold, fontWeight: '800', fontSize: 9 },
   plansTitle: { ...typography.h3, color: colors.text },
   plansRow: { flexDirection: 'row', gap: spacing.sm },
   planCard: {

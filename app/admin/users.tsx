@@ -190,7 +190,11 @@ export default function AdminUsersScreen() {
           columns={columns}
           data={filtered}
           keyExtractor={(u) => u.id}
-          emptyText="Aramanla eşleşen kullanıcı bulunamadı."
+          emptyText={
+            users.length === 0
+              ? 'Kayıtlı kullanıcı bulunamadı. Müşteri uygulamasında profil oluşturulduğunda kullanıcılar burada listelenir.'
+              : 'Aramanla eşleşen kullanıcı bulunamadı.'
+          }
         />
 
         <Text style={styles.footNote}>{filtered.length} kullanıcı gösteriliyor</Text>

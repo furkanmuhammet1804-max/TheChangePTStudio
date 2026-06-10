@@ -91,7 +91,7 @@ export function AdminLogin() {
       </View>
 
       <Text style={styles.footNote}>
-        Geçici yönetici girişi · Gerçek kimlik doğrulama backend ile gelecek
+        Yetkili girişi · Bu panel yalnızca işletme yönetimi içindir
       </Text>
     </SafeAreaView>
   );

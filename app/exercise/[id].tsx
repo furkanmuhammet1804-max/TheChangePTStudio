@@ -79,7 +79,7 @@ function ExerciseMedia({ exercise }: { exercise: Exercise }) {
       </View>
       <Text style={mediaStyles.placeholderTitle}>Medya hazırlanıyor</Text>
       <Text style={mediaStyles.placeholderText}>
-        Bu hareketin video ve görselleri yakında eklenecek
+        Bu hareketin video ve görsel içeriği stüdyo tarafından hazırlanıyor
       </Text>
     </View>
   );

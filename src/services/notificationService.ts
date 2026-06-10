@@ -1,12 +1,13 @@
 /**
  * Bildirim gönderim servisi.
  *
- * Şu an gönderim mock'tur (push altyapısı bağlı değil) ama servis sözleşmesi
- * gerçektir: kampanya kaydı oluşturur, hedef kitleyi gerçek kullanıcı
- * listesinden hesaplar ve geçmişe yazar. Expo Push / FCM bağlandığında sadece
- * `deliver()` içi değişir.
+ * Kampanya kaydı oluşturur, hedef kitleyi gerçek kullanıcı listesinden
+ * hesaplar ve geçmişe yazar. Gönderim bu cihazda GERÇEK yerel bildirim
+ * olarak teslim edilir (test edilebilir); cihazlar arası dağıtım için
+ * Expo Push / FCM bağlandığında sadece `deliver()` içi değişir.
  */
 import { addCampaign, getAppState } from '@/src/services/appStore';
+import { scheduleLocalNotification } from '@/src/services/localNotifications';
 import { NotificationAudience, NotificationCampaign, UserAccount } from '@/src/types/admin';
 
 export interface CampaignInput {
@@ -26,10 +27,15 @@ export function audienceReach(audience: NotificationAudience): number {
   return audienceUsers(getAppState().users, audience).length;
 }
 
-/** Gerçek push entegrasyonunun bağlanacağı tek nokta */
-async function deliver(_campaign: NotificationCampaign, _recipients: UserAccount[]): Promise<void> {
-  // Mock gönderim: ağ gecikmesini taklit eder.
-  await new Promise((resolve) => setTimeout(resolve, 400));
+/** Uzak push entegrasyonunun (Expo Push/FCM) bağlanacağı tek nokta */
+async function deliver(campaign: NotificationCampaign, _recipients: UserAccount[]): Promise<void> {
+  // Bu cihazda gerçek yerel bildirim olarak teslim edilir (admin APK'da
+  // gönderimi anında test etmeyi sağlar). Web'de sessizce atlanır.
+  await scheduleLocalNotification('admin_announcement', {
+    title: campaign.title,
+    body: campaign.body,
+    secondsFromNow: 3,
+  });
 }
 
 export async function sendCampaign(input: CampaignInput): Promise<NotificationCampaign> {

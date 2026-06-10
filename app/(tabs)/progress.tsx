@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
@@ -17,8 +18,11 @@ import { useUser } from '@/src/contexts/UserContext';
 import { UPGRADE_MESSAGES } from '@/src/constants/strings';
 import { getWorkoutById } from '@/src/data/workouts';
 import { evaluateAchievements } from '@/src/lib/achievements';
+import { pickImage } from '@/src/services/mediaUploadService';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
-import { calcBMI, formatDate, formatSeconds, formatWeight } from '@/src/utils/formatters';
+import { TransformationPhoto } from '@/src/types';
+import { calcBMI, formatDate, formatSeconds, formatShortDate, formatWeight } from '@/src/utils/formatters';
+import { hapticConfirm } from '@/src/utils/haptics';
 import { notify } from '@/src/utils/notify';
 
 export default function ProgressScreen() {
@@ -34,6 +38,9 @@ export default function ProgressScreen() {
     isPremium,
     getProgram,
     favoriteExerciseIds,
+    transformationPhotos,
+    setTransformationPhoto,
+    removeTransformationPhoto,
   } = useUser();
 
   const [weightModalVisible, setWeightModalVisible] = useState(false);
@@ -306,11 +313,21 @@ export default function ProgressScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Önce / Sonra</Text>
           <View style={styles.photoRow}>
-            <PhotoPlaceholder label="Önce" />
-            <PhotoPlaceholder label="Sonra" />
+            <TransformationSlot
+              label="Önce"
+              photo={transformationPhotos.before}
+              onPick={(uri) => setTransformationPhoto('before', uri)}
+              onRemove={() => removeTransformationPhoto('before')}
+            />
+            <TransformationSlot
+              label="Sonra"
+              photo={transformationPhotos.after}
+              onPick={(uri) => setTransformationPhoto('after', uri)}
+              onRemove={() => removeTransformationPhoto('after')}
+            />
           </View>
           <Text style={styles.photoHint}>
-            Dönüşümünü belgelemek için önce/sonra fotoğraflarını ekle
+            Fotoğrafların yalnızca bu cihazda saklanır — dönüşümünü belgelemek için ekle
           </Text>
         </View>
       </ScrollView>
@@ -444,14 +461,64 @@ const achieveStyles = StyleSheet.create({
   desc:          { ...typography.caption, color: colors.textSecondary },
 });
 
-function PhotoPlaceholder({ label }: { label: string }) {
+/** Önce/Sonra fotoğraf slotu — cihazdan seçme, değiştirme ve kaldırma */
+function TransformationSlot({
+  label, photo, onPick, onRemove,
+}: {
+  label: string;
+  photo?: TransformationPhoto;
+  onPick: (uri: string) => void;
+  onRemove: () => void;
+}) {
+  const handlePick = async () => {
+    const result = await pickImage();
+    if (result.status === 'invalid') {
+      notify('Fotoğraf Seçilemedi', result.reason);
+      return;
+    }
+    if (result.status === 'cancelled') return;
+    hapticConfirm();
+    onPick(result.media.uri);
+  };
+
+  if (photo) {
+    return (
+      <View style={photoStyles.box}>
+        <Image source={{ uri: photo.uri }} style={photoStyles.photo} contentFit="cover" />
+        <View style={photoStyles.overlay}>
+          <Text style={photoStyles.overlayLabel}>
+            {label} · {formatShortDate(photo.takenAt)}
+          </Text>
+          <View style={photoStyles.overlayActions}>
+            <TouchableOpacity
+              style={photoStyles.overlayBtn}
+              onPress={handlePick}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`${label} fotoğrafını değiştir`}
+            >
+              <Ionicons name="swap-horizontal-outline" size={16} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={photoStyles.overlayBtn}
+              onPress={onRemove}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`${label} fotoğrafını kaldır`}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.error} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <TouchableOpacity
-      style={photoStyles.box}
+      style={[photoStyles.box, photoStyles.boxEmpty]}
       activeOpacity={0.8}
-      onPress={() =>
-        notify('Fotoğraf Ekle', 'Fotoğraf yükleme, depolama altyapısı bağlandığında aktifleşecek.')
-      }
+      onPress={handlePick}
       accessibilityRole="button"
       accessibilityLabel={`${label} fotoğrafı ekle`}
     >
@@ -468,12 +535,39 @@ const photoStyles = StyleSheet.create({
     aspectRatio: 0.75,
     backgroundColor: colors.surfaceSecondary,
     borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  boxEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
     borderStyle: 'dashed',
+  },
+  photo: { flex: 1 },
+  overlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.xs,
+    backgroundColor: colors.overlayStrong,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
+  },
+  overlayLabel: { ...typography.caption, color: colors.text, flexShrink: 1 },
+  overlayActions: { flexDirection: 'row', gap: spacing.xs },
+  overlayBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.sm,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: { ...typography.label, color: colors.textMuted },
   hint:  { ...typography.caption, color: colors.accent },

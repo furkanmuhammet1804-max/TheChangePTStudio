@@ -356,35 +356,8 @@ function PremiumHome() {
           <CoachNoteCard note={coachNote} />
         </View>
 
-        {/* Coming soon: AI coach & nutrition */}
-        <View style={styles.section}>
-          <SectionHeader title="Yakında" />
-          <View style={styles.soonRow}>
-            <ComingSoonCard icon="sparkles-outline" label="Yapay Zeka Koç" />
-            <ComingSoonCard icon="restaurant-outline" label="Beslenme" />
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function ComingSoonCard({
-  icon, label,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-}) {
-  return (
-    <View style={styles.soonCard}>
-      <View style={styles.soonIcon}>
-        <Ionicons name={icon} size={20} color={colors.gold} />
-      </View>
-      <Text style={styles.soonLabel}>{label}</Text>
-      <View style={styles.soonBadge}>
-        <Text style={styles.soonBadgeText}>YAKINDA</Text>
-      </View>
-    </View>
   );
 }
 
@@ -588,35 +561,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...shadows.accent,
   },
-
-  // Coming soon
-  soonRow: { flexDirection: 'row', gap: spacing.sm },
-  soonCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  soonIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.goldMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  soonLabel: { ...typography.bodyMedium, color: colors.text },
-  soonBadge: {
-    backgroundColor: colors.goldMuted,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-  },
-  soonBadgeText: { ...typography.caption, color: colors.gold, fontWeight: '800' },
 
   section: { marginTop: spacing.sm },
 });

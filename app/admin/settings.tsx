@@ -31,12 +31,12 @@ export default function AdminSettingsScreen() {
 
   const handleReset = async () => {
     const ok = await confirmAction(
-      'Demo Verilerini Sıfırla',
-      'Tüm kullanıcı, üyelik, içerik değişiklikleri ve bildirim geçmişi başlangıç verilerine döndürülecek. Emin misin?',
+      'Yerel Verileri Sıfırla',
+      'Bu cihazdaki tüm kullanıcı, üyelik, içerik değişikliği ve bildirim geçmişi kayıtları silinecek; katalog varsayılana dönecek. Bu işlem geri alınamaz. Emin misin?',
     );
     if (!ok) return;
     await resetLocalData();
-    notify('Sıfırlandı', 'Yerel veriler başlangıç durumuna döndürüldü.');
+    notify('Sıfırlandı', 'Yerel yönetim verileri temizlendi.');
   };
 
   return (
@@ -69,16 +69,16 @@ export default function AdminSettingsScreen() {
           <StatusRow
             icon="card-outline"
             label="Ödeme Sistemi"
-            desc="İyzico / RevenueCat entegrasyonu"
-            badge={settings.paymentsEnabled ? 'Bağlı' : 'Kurulum Bekliyor'}
+            desc="Mağaza abonelikleri için RevenueCat hesabı ve ürün tanımları gerekli — servis katmanı hazır"
+            badge={settings.paymentsEnabled ? 'Bağlı' : 'Hesap Gerekli'}
             ok={settings.paymentsEnabled}
           />
           <StatusRow
             icon="notifications-outline"
             label="Bildirim Sistemi"
-            desc="Expo Push servisi — şu an gönderimler kayıt amaçlı"
-            badge={settings.pushEnabled ? 'Bağlı' : 'Kurulum Bekliyor'}
-            ok={settings.pushEnabled}
+            desc="Yerel bildirimler çalışıyor; tüm cihazlara eşzamanlı dağıtım push sunucusu gerektirir"
+            badge={settings.pushEnabled ? 'Push Bağlı' : 'Yerel Aktif'}
+            ok
           />
           <StatusRow
             icon="sync-outline"
@@ -112,7 +112,7 @@ export default function AdminSettingsScreen() {
       <AdminCard title="Yönetim" subtitle="Oturum ve veri işlemleri">
         <View style={styles.actionRow}>
           <AdminButton label="Çıkış Yap" icon="log-out-outline" variant="ghost" onPress={() => logoutAdmin()} />
-          <AdminButton label="Demo Verilerini Sıfırla" icon="refresh-outline" variant="danger" onPress={handleReset} />
+          <AdminButton label="Yerel Verileri Sıfırla" icon="refresh-outline" variant="danger" onPress={handleReset} />
         </View>
       </AdminCard>
 

@@ -138,19 +138,29 @@ export default function AdminMembershipsScreen() {
         title="Manuel Premium Tanımla"
         subtitle="Seçilen kullanıcıya plan süresi kadar premium üyelik verilir"
       >
-        <ChipSelect
-          label="Kullanıcı"
-          options={grantableUsers.map((u) => ({ key: u.id, label: u.profile.name }))}
-          value={grantUserId}
-          onChange={setGrantUserId}
-        />
-        <ChipSelect
-          label="Plan"
-          options={SUBSCRIPTION_PLANS.map((p) => ({ key: p.id, label: p.label }))}
-          value={grantPlanId}
-          onChange={setGrantPlanId}
-        />
-        <AdminButton label="Premium Tanımla" icon="star-outline" variant="primary" onPress={handleGrant} />
+        {grantableUsers.length === 0 ? (
+          <Text style={styles.emptyText}>
+            {users.length === 0
+              ? 'Kayıtlı kullanıcı bulunamadı. Kullanıcılar uygulamada profil oluşturduğunda burada listelenir.'
+              : 'Tüm kayıtlı kullanıcılar zaten premium.'}
+          </Text>
+        ) : (
+          <>
+            <ChipSelect
+              label="Kullanıcı"
+              options={grantableUsers.map((u) => ({ key: u.id, label: u.profile.name }))}
+              value={grantUserId}
+              onChange={setGrantUserId}
+            />
+            <ChipSelect
+              label="Plan"
+              options={SUBSCRIPTION_PLANS.map((p) => ({ key: p.id, label: p.label }))}
+              value={grantPlanId}
+              onChange={setGrantPlanId}
+            />
+            <AdminButton label="Premium Tanımla" icon="star-outline" variant="primary" onPress={handleGrant} />
+          </>
+        )}
       </AdminCard>
 
       {/* Abonelik geçmişi */}
@@ -168,8 +178,9 @@ export default function AdminMembershipsScreen() {
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={16} color={colors.warning} />
           <Text style={styles.infoText}>
-            Ödeme sistemi henüz bağlı değil. Buradaki üyelikler manuel yönetiliyor; gerçek abonelik
-            akışı ödeme sağlayıcı (İyzico / RevenueCat) entegrasyonuyla aktifleşecek.
+            Üyelikler bu panelden manuel yönetilir ve uygulamada anında geçerli olur. Mağaza içi
+            otomatik tahsilat, App Store / Google Play geliştirici hesapları ve RevenueCat ürün
+            tanımları yapıldığında devreye alınacak; servis katmanı hazır.
           </Text>
         </View>
       </AdminCard>
@@ -206,6 +217,7 @@ const styles = StyleSheet.create({
   planStatValue: { ...typography.h4, color: colors.text },
   planStatLabel: { ...typography.caption, color: colors.textSecondary },
   dimmed: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall, color: colors.textMuted, lineHeight: 18 },
   infoBox: {
     flexDirection: 'row',
     alignItems: 'center',

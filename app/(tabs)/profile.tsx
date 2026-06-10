@@ -24,11 +24,11 @@ export default function ProfileScreen() {
 
   const handleLeavePremium = () => {
     Alert.alert(
-      'Premium Önizlemeden Çık',
+      'Premium Üyeliği İptal Et',
       'Premium özelliklerine erişimin kapanacak. Devam etmek istiyor musun?',
       [
         { text: 'Vazgeç', style: 'cancel' },
-        { text: 'Çık', style: 'destructive', onPress: () => setMembership('free') },
+        { text: 'İptal Et', style: 'destructive', onPress: () => setMembership('free') },
       ],
     );
   };
@@ -156,7 +156,7 @@ export default function ProfileScreen() {
           {isPremium && (
             <SettingsRow
               icon="exit-outline"
-              label="Premium Önizlemeden Çık"
+              label="Premium Üyeliği İptal Et"
               onPress={handleLeavePremium}
             />
           )}

@@ -13,6 +13,7 @@ import {
   Program,
   ProgressData,
   SetLog,
+  TransformationPhoto,
   UserProfile,
   WeightEntry,
   WorkoutLog,
@@ -37,6 +38,7 @@ const WORKOUT_LOGS_KEY = '@tcp_workout_logs';
 const MEMBERSHIP_KEY   = '@tcp_membership';
 const FAVORITES_KEY    = '@tcp_favorite_exercises';
 const CUSTOM_PROG_KEY  = '@tcp_custom_program';
+const TRANSFORM_KEY    = '@tcp_transformation_photos';
 
 // ─── Context shape ─────────────────────────────────────────────────────────
 interface UserContextType {
@@ -69,6 +71,11 @@ interface UserContextType {
   // Legacy weight tracking
   progress:        ProgressData;
   addWeightEntry:  (weight: number) => Promise<void>;
+
+  // Transformation (önce/sonra) fotoğrafları — premium
+  transformationPhotos:      Partial<Record<'before' | 'after', TransformationPhoto>>;
+  setTransformationPhoto:    (type: 'before' | 'after', uri: string) => Promise<void>;
+  removeTransformationPhoto: (type: 'before' | 'after') => Promise<void>;
 
   // Program tracking
   activeProgram:      ActiveProgram | null;
@@ -132,6 +139,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [favoriteExerciseIds,  setFavoriteExerciseIds]  = useState<string[]>([]);
   const [customProgram,        setCustomProgram]        = useState<Program | null>(null);
   const [assignedProgramIds,   setAssignedProgramIds]   = useState<string[]>([]);
+  const [transformationPhotos, setTransformationPhotos] = useState<Partial<Record<'before' | 'after', TransformationPhoto>>>({});
   const [loading,              setLoading]              = useState(true);
 
   useEffect(() => { loadAll(); }, []);
@@ -140,7 +148,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       // Ortak veri deposu (admin panel ile paylaşılan) önce hazır olmalı
       await initAppStore();
-      const [profJ, onbStr, progJ, activePJ, logsJ, memStr, favJ, customJ] = await Promise.all([
+      const [profJ, onbStr, progJ, activePJ, logsJ, memStr, favJ, customJ, transformJ] = await Promise.all([
         AsyncStorage.getItem(USER_KEY),
         AsyncStorage.getItem(ONBOARDING_KEY),
         AsyncStorage.getItem(PROGRESS_KEY),
@@ -149,6 +157,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         AsyncStorage.getItem(MEMBERSHIP_KEY),
         AsyncStorage.getItem(FAVORITES_KEY),
         AsyncStorage.getItem(CUSTOM_PROG_KEY),
+        AsyncStorage.getItem(TRANSFORM_KEY),
       ]);
       if (profJ)    setProfile(JSON.parse(profJ));
       if (onbStr === 'true') setIsOnboardingComplete(true);
@@ -158,6 +167,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (memStr === 'premium') setMembershipState('premium');
       if (favJ)     setFavoriteExerciseIds(JSON.parse(favJ));
       if (customJ)  setCustomProgram(JSON.parse(customJ));
+      if (transformJ) setTransformationPhotos(JSON.parse(transformJ));
     } catch { /* ignore first-run errors */ } finally {
       setLoading(false);
     }
@@ -239,6 +249,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(PROGRESS_KEY, JSON.stringify(updated));
     setProgress(updated);
   }, [progress]);
+
+  // ── Transformation (önce/sonra) fotoğrafları ──────────────────────────────
+  const setTransformationPhoto = useCallback(
+    async (type: 'before' | 'after', uri: string) => {
+      const photo: TransformationPhoto = {
+        id: `tp_${Date.now()}`,
+        type,
+        uri,
+        takenAt: new Date().toISOString(),
+      };
+      const updated = { ...transformationPhotos, [type]: photo };
+      await AsyncStorage.setItem(TRANSFORM_KEY, JSON.stringify(updated));
+      setTransformationPhotos(updated);
+    },
+    [transformationPhotos],
+  );
+
+  const removeTransformationPhoto = useCallback(
+    async (type: 'before' | 'after') => {
+      const updated = { ...transformationPhotos };
+      delete updated[type];
+      await AsyncStorage.setItem(TRANSFORM_KEY, JSON.stringify(updated));
+      setTransformationPhotos(updated);
+    },
+    [transformationPhotos],
+  );
 
   // ── Program tracking ──────────────────────────────────────────────────────
   const startProgram = useCallback(async (programId: string) => {
@@ -345,7 +381,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.multiRemove([
       USER_KEY, ONBOARDING_KEY, PROGRESS_KEY,
       ACTIVE_PROG_KEY, WORKOUT_LOGS_KEY,
-      MEMBERSHIP_KEY, FAVORITES_KEY, CUSTOM_PROG_KEY,
+      MEMBERSHIP_KEY, FAVORITES_KEY, CUSTOM_PROG_KEY, TRANSFORM_KEY,
     ]);
     setProfile(null);
     setIsOnboardingComplete(false);
@@ -355,6 +391,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setMembershipState('free');
     setFavoriteExerciseIds([]);
     setCustomProgram(null);
+    setTransformationPhotos({});
   }, []);
 
   // ── Derived stats ─────────────────────────────────────────────────────────
@@ -406,6 +443,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       favoriteExerciseIds, toggleFavoriteExercise, isFavoriteExercise,
       customProgram, saveCustomProgram, getProgram,
       progress, addWeightEntry,
+      transformationPhotos, setTransformationPhoto, removeTransformationPhoto,
       activeProgram, startProgram, advanceProgramDay, abandonProgram,
       workoutLogs, saveWorkoutLog, getLastExerciseSets, getExerciseHistory,
       weeklyCompletedCount, currentStreak, totalWorkouts,
@@ -419,6 +457,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       favoriteExerciseIds, toggleFavoriteExercise, isFavoriteExercise,
       customProgram, saveCustomProgram, getProgram,
       progress, addWeightEntry,
+      transformationPhotos, setTransformationPhoto, removeTransformationPhoto,
       activeProgram, startProgram, advanceProgramDay, abandonProgram,
       workoutLogs, saveWorkoutLog, getLastExerciseSets, getExerciseHistory,
       weeklyCompletedCount, currentStreak, totalWorkouts,

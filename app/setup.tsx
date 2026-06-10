@@ -59,27 +59,28 @@ const LEVEL_DESCRIPTIONS: Record<string, string> = {
 };
 
 export default function SetupScreen() {
-  const { saveProfile } = useUser();
+  const { saveProfile, profile: existing } = useUser();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
 
+  // Profil düzenlemede mevcut değerlerle önceden doldurulur
   // Step 0 - Basic info
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
-  const [gender, setGender] = useState<Gender>('male');
+  const [name, setName] = useState(existing?.name ?? '');
+  const [age, setAge] = useState(existing ? String(existing.age) : '');
+  const [height, setHeight] = useState(existing ? String(existing.height) : '');
+  const [weight, setWeight] = useState(existing ? String(existing.weight) : '');
+  const [gender, setGender] = useState<Gender>(existing?.gender ?? 'male');
 
   // Step 1 - Goal
-  const [goal, setGoal] = useState<UserGoal>('fat_burn');
+  const [goal, setGoal] = useState<UserGoal>(existing?.goal ?? 'fat_burn');
 
   // Step 2 - Schedule & location
-  const [weeklyDays, setWeeklyDays] = useState<WeeklyDays>(3);
-  const [location, setLocation] = useState<TrainingLocation>('gym');
+  const [weeklyDays, setWeeklyDays] = useState<WeeklyDays>(existing?.weeklyDays ?? 3);
+  const [location, setLocation] = useState<TrainingLocation>(existing?.trainingLocation ?? 'gym');
 
   // Step 3 - Level & target weight
-  const [level, setLevel] = useState<Difficulty>('beginner');
-  const [targetWeight, setTargetWeight] = useState('');
+  const [level, setLevel] = useState<Difficulty>(existing?.level ?? 'beginner');
+  const [targetWeight, setTargetWeight] = useState(existing ? String(existing.targetWeight) : '');
 
   // Smooth step transition animation
   const anim = useRef(new Animated.Value(1)).current;
@@ -121,9 +122,10 @@ export default function SetupScreen() {
       weeklyDays,
       trainingLocation: location,
       level,
-      startingWeight: parseFloat(weight) || 70,
+      // Düzenlemede başlangıç kilosu ve kayıt tarihi korunur
+      startingWeight: existing?.startingWeight ?? (parseFloat(weight) || 70),
       targetWeight: parseFloat(targetWeight) || parseFloat(weight) || 70,
-      createdAt: new Date().toISOString(),
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     await saveProfile(profile);
     router.replace('/(tabs)');
