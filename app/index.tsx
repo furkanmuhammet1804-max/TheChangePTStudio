@@ -4,18 +4,22 @@ import {
   Animated,
   Dimensions,
   Image,
+  Platform,
   StyleSheet,
   View,
 } from 'react-native';
+import { LandingPage } from '@/src/components/landing/LandingPage';
 import { useUser } from '@/src/contexts/UserContext';
 import { isAdminApp } from '@/src/lib/appVariant';
 import { colors, spacing, typography } from '@/src/theme';
 
 const { width } = Dimensions.get('window');
 
-export default function SplashAnimationScreen() {
+export default function IndexScreen() {
   // Admin varyantı doğrudan yönetim paneline açılır (müşteri akışı yok)
   if (isAdminApp) return <Redirect href="/admin" />;
+  // Web'de kök adres tanıtım sitesidir; uygulama "Uygulamayı Keşfet" ile açılır
+  if (Platform.OS === 'web') return <LandingPage />;
   return <CustomerSplash />;
 }
 
