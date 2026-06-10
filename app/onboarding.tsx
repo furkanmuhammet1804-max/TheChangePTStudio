@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { Button } from '@/src/components/ui/Button';
 import { useUser } from '@/src/contexts/UserContext';
 import { ONBOARDING_SLIDES } from '@/src/constants/strings';
@@ -65,6 +66,8 @@ export default function OnboardingScreen() {
       />
 
       <View style={[styles.skipRow, { paddingTop: insets.top + spacing.sm }]}>
+        {/* Marka kimliği — ilk slaytta küçük ve premium */}
+        {activeIndex === 0 ? <BrandLogo height={22} /> : <View />}
         {!isLast ? (
           <TouchableOpacity onPress={handleStart} style={styles.skipBtn} hitSlop={12}>
             <Text style={styles.skipText}>Atla</Text>
@@ -221,7 +224,9 @@ const styles = StyleSheet.create({
   },
   skipRow: {
     paddingHorizontal: spacing.lg,
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   skipBtn: {
     padding: spacing.sm,

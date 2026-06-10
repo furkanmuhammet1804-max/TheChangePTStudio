@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { useUser } from '@/src/contexts/UserContext';
 import { confirmAction, notify } from '@/src/utils/notify';
 import {
@@ -167,7 +168,11 @@ export default function ProfileScreen() {
           />
         </View>
 
-        <Text style={styles.version}>The Change PT Studio · v1.0.0</Text>
+        {/* Marka imzası */}
+        <View style={styles.brandFooter}>
+          <BrandLogo height={28} />
+          <Text style={styles.version}>v1.0.0</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -330,10 +335,14 @@ const styles = StyleSheet.create({
   },
   premiumTitle: { ...typography.h4, color: colors.background, marginBottom: 2 },
   premiumSub: { ...typography.bodySmall, color: colors.background, opacity: 0.8 },
+  brandFooter: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
   version: {
     ...typography.caption,
     color: colors.textMuted,
     textAlign: 'center',
-    marginTop: spacing.md,
   },
 });

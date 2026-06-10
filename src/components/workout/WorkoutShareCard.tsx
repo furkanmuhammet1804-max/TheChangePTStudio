@@ -7,6 +7,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { APP_NAME } from '@/src/constants/strings';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 import { WorkoutLog } from '@/src/types';
@@ -42,10 +43,7 @@ export function WorkoutShareCard({ log, workoutName }: WorkoutShareCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.brandRow}>
-        <View style={styles.brandLogo}>
-          <Ionicons name="barbell" size={14} color={colors.background} />
-        </View>
-        <Text style={styles.brandText}>{APP_NAME.toUpperCase()}</Text>
+        <BrandLogo height={20} />
       </View>
 
       <Text style={styles.headline}>Bugün antrenmanımı tamamladım.</Text>
@@ -101,15 +99,6 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  brandLogo: {
-    width: 24,
-    height: 24,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandText: { ...typography.caption, color: colors.accent, letterSpacing: 1.5, fontWeight: '800' },
   headline: { ...typography.h4, color: colors.text },
   workoutName: { ...typography.bodySmall, color: colors.textSecondary },
   statsRow: {

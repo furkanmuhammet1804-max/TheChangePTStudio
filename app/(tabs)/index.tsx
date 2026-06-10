@@ -15,6 +15,7 @@ import { HeroWorkoutCard } from '@/src/components/home/HeroWorkoutCard';
 import { QuickAccessGrid } from '@/src/components/home/QuickAccessGrid';
 import { WeeklyProgressCard } from '@/src/components/home/WeeklyProgressCard';
 import { PremiumLockCard } from '@/src/components/premium/PremiumLockCard';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { SectionHeader } from '@/src/components/ui/SectionHeader';
 import { useUser } from '@/src/contexts/UserContext';
@@ -61,6 +62,11 @@ function FreeHome() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Marka kimliği */}
+        <View style={styles.brandBar}>
+          <BrandLogo height={26} />
+        </View>
+
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -256,6 +262,11 @@ function PremiumHome() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Marka kimliği */}
+        <View style={styles.brandBar}>
+          <BrandLogo height={26} />
+        </View>
+
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -366,12 +377,15 @@ const styles = StyleSheet.create({
   scroll:   { flex: 1 },
   content:  { padding: spacing.md, paddingBottom: spacing.xxl, gap: spacing.md },
 
+  brandBar: {
+    alignItems: 'center',
+    paddingTop: spacing.sm,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: spacing.sm,
-    paddingTop: spacing.sm,
   },
   headerLeft: { flex: 1 },
   greeting: { ...typography.h2, color: colors.text, marginBottom: 2 },

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormField } from '@/src/components/admin/forms';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { isAdminApp } from '@/src/lib/appVariant';
 import { loginAdmin } from '@/src/services/adminAuth';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
@@ -37,10 +38,7 @@ export function AdminLogin() {
     <SafeAreaView style={styles.root}>
       <View style={styles.card}>
         <View style={styles.brand}>
-          <View style={styles.brandLogo}>
-            <Ionicons name="barbell" size={24} color={colors.background} />
-          </View>
-          <Text style={styles.brandTitle}>THE CHANGE PT STUDIO</Text>
+          <BrandLogo height={48} />
           <Text style={styles.brandSub}>YÖNETİM PANELİ</Text>
         </View>
 
@@ -117,18 +115,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     ...shadows.md,
   },
-  brand: { alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
-  brandLogo: {
-    width: 52,
-    height: 52,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-    ...shadows.accent,
-  },
-  brandTitle: { ...typography.h4, color: colors.text, letterSpacing: 1.5 },
+  brand: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   brandSub: { ...typography.caption, color: colors.accent, letterSpacing: 2 },
 
   errorBox: {

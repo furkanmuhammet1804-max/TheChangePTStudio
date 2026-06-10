@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { isAdminApp } from '@/src/lib/appVariant';
 import { logoutAdmin } from '@/src/services/adminAuth';
 import { useAppState } from '@/src/services/appStore';
@@ -79,13 +80,8 @@ function Sidebar({ pathname }: { pathname: string }) {
     <View style={styles.sidebar}>
       {/* Brand */}
       <View style={styles.brand}>
-        <View style={styles.brandLogo}>
-          <Ionicons name="barbell" size={20} color={colors.background} />
-        </View>
-        <View>
-          <Text style={styles.brandTitle}>THE CHANGE</Text>
-          <Text style={styles.brandSub}>PT STUDIO · ADMIN</Text>
-        </View>
+        <BrandLogo height={36} />
+        <Text style={styles.brandSub}>YÖNETİM PANELİ</Text>
       </View>
 
       {/* Nav */}
@@ -138,9 +134,16 @@ function TopBar({ showBrand }: { showBrand: boolean }) {
 
   return (
     <View style={styles.topBar}>
-      <Text style={styles.topBarTitle} numberOfLines={1}>
-        {showBrand ? `${settings.companyName} · Admin` : `${settings.companyName} Admin`}
-      </Text>
+      {showBrand ? (
+        <View style={styles.topBarBrand}>
+          <BrandLogo height={22} />
+          <Text style={styles.topBarTitle} numberOfLines={1}>· Admin</Text>
+        </View>
+      ) : (
+        <Text style={styles.topBarTitle} numberOfLines={1}>
+          {settings.companyName} Admin
+        </Text>
+      )}
 
       <View style={styles.topBarRight}>
         <View style={styles.adminUser}>
@@ -218,25 +221,15 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   brand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm + 2,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingBottom: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     marginBottom: spacing.md,
   },
-  brandLogo: {
-    width: 38,
-    height: 38,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandTitle: { ...typography.h4, color: colors.text, letterSpacing: 1 },
-  brandSub: { ...typography.caption, color: colors.accent, letterSpacing: 1.2, marginTop: 1 },
+  brandSub: { ...typography.caption, color: colors.accent, letterSpacing: 1.2 },
 
   nav: { gap: 2, flex: 1 },
   navItem: {
@@ -289,6 +282,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   topBarTitle: { ...typography.h4, color: colors.text, flexShrink: 1 },
+  topBarBrand: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
   topBarRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   adminUser: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   avatar: {

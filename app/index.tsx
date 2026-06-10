@@ -3,12 +3,12 @@ import React, { useEffect, useRef } from 'react';
 import {
   Animated,
   Dimensions,
-  Image,
   Platform,
   StyleSheet,
   View,
 } from 'react-native';
 import { LandingPage } from '@/src/components/landing/LandingPage';
+import { BrandLogo, LOGO_ASPECT_RATIO } from '@/src/components/ui/BrandLogo';
 import { useUser } from '@/src/contexts/UserContext';
 import { isAdminApp } from '@/src/lib/appVariant';
 import { colors, spacing, typography } from '@/src/theme';
@@ -68,11 +68,7 @@ function CustomerSplash() {
   return (
     <View style={styles.container}>
       <Animated.View style={{ opacity, transform: [{ scale }] }}>
-        <Image
-          source={require('@/assets/images/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <BrandLogo height={(width * 0.72) / LOGO_ASPECT_RATIO} />
       </Animated.View>
 
       <Animated.Text style={[styles.tagline, { opacity: taglineOpacity }]}>
@@ -89,10 +85,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xl,
-  },
-  logo: {
-    width: width * 0.7,
-    height: 120,
   },
   tagline: {
     ...typography.body,

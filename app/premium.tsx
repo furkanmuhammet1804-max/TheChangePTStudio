@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { useUser } from '@/src/contexts/UserContext';
 import { PREMIUM_BENEFITS } from '@/src/constants/strings';
 import { listPlans, purchasePlan } from '@/src/services/paymentService';
@@ -74,6 +75,8 @@ export default function PremiumScreen() {
       >
         {/* Header — value first, no pressure */}
         <View style={styles.hero}>
+          {/* Altın logo, premium kimliği destekler */}
+          <BrandLogo height={42} />
           <View style={styles.goldBadge}>
             <Ionicons name="star" size={16} color={colors.background} />
             <Text style={styles.goldBadgeText}>PREMIUM</Text>

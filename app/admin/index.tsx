@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { DataTable, TableColumn } from '@/src/components/admin/DataTable';
 import { AdminButton, AdminCard, PageHeader, StatCard, StatusBadge } from '@/src/components/admin/ui';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { GOAL_LABELS, TIER_LABELS } from '@/src/constants/strings';
 import { computeDashboardStats, getUserTier, useAppState } from '@/src/services/appStore';
 import { colors, spacing, typography } from '@/src/theme';
@@ -67,7 +68,11 @@ export default function AdminDashboardScreen() {
 
   return (
     <>
-      <PageHeader title="Dashboard" subtitle={`${state.settings.companyName} genel görünüm`} />
+      <PageHeader
+        title="Dashboard"
+        subtitle={`${state.settings.companyName} genel görünüm`}
+        actions={<BrandLogo height={30} />}
+      />
 
       {/* Üyelik istatistikleri */}
       <View style={styles.statsRow}>

@@ -24,6 +24,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { useUser } from '@/src/contexts/UserContext';
 import { APP_NAME, APP_TAGLINE } from '@/src/constants/strings';
 import { borderRadius, colors, gradients, shadows, spacing, typography } from '@/src/theme';
@@ -179,10 +180,7 @@ export function LandingPage() {
       <View style={styles.navBar}>
         <View style={[styles.navInner, { maxWidth: MAX_WIDTH }]}>
           <View style={styles.brandRow}>
-            <View style={styles.brandLogo}>
-              <Ionicons name="barbell" size={18} color={colors.background} />
-            </View>
-            {!isMobile && <Text style={styles.brandName}>THE CHANGE PT STUDIO</Text>}
+            <BrandLogo height={isMobile ? 28 : 34} />
           </View>
           <View style={styles.navLinks}>
             {!isTablet && (
@@ -222,9 +220,9 @@ export function LandingPage() {
                   <View style={styles.dot} />
                   <Text style={styles.heroEyebrowText}>KİŞİSEL ANTRENMAN UYGULAMASI</Text>
                 </View>
-                <Text style={[styles.heroTitle, isMobile && styles.heroTitleMobile]}>
-                  {APP_NAME}
-                </Text>
+                {/* Marka hissi: hero'da büyük resmi logo */}
+                <BrandLogo height={isMobile ? 72 : 110} />
+
                 <Text style={styles.heroTagline}>{APP_TAGLINE}</Text>
                 <Text style={styles.heroDesc}>
                   Hedefine göre antrenman yap, hareketleri doğru formda öğren ve gelişimini
@@ -458,10 +456,7 @@ export function LandingPage() {
         <View style={styles.footer}>
           <View style={[styles.footerInner, { maxWidth: MAX_WIDTH }]}>
             <View style={styles.brandRow}>
-              <View style={styles.brandLogo}>
-                <Ionicons name="barbell" size={16} color={colors.background} />
-              </View>
-              <Text style={styles.footerBrand}>{APP_NAME}</Text>
+              <BrandLogo height={26} />
             </View>
             <Text style={styles.footerNote}>
               © {new Date().getFullYear()} {APP_NAME} · Tüm hakları saklıdır
@@ -623,15 +618,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  brandLogo: {
-    width: 34,
-    height: 34,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandName: { ...typography.h4, color: colors.text, letterSpacing: 1.5 },
   navLinks: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   navLink: { ...typography.bodySmall, color: colors.textSecondary, fontWeight: '600' },
   navCta: {
@@ -664,8 +650,6 @@ const styles = StyleSheet.create({
   heroEyebrow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent },
   heroEyebrowText: { ...typography.label, color: colors.textSecondary, letterSpacing: 2 },
-  heroTitle: { ...typography.hero, fontSize: 56, lineHeight: 60, color: colors.text },
-  heroTitleMobile: { fontSize: 38, lineHeight: 42 },
   heroTagline: { ...typography.h3, color: colors.accent },
   heroDesc: { ...typography.body, color: colors.textSecondary, lineHeight: 26, maxWidth: 520 },
   heroBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
@@ -928,6 +912,5 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.md,
   },
-  footerBrand: { ...typography.bodyMedium, color: colors.text, fontWeight: '700' },
   footerNote: { ...typography.caption, color: colors.textMuted },
 });
