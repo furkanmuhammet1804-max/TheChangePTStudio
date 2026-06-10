@@ -1,93 +1,158 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminCard, PageHeader, StatusBadge } from '@/src/components/admin/ui';
-import { notify } from '@/src/utils/notify';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { FormField } from '@/src/components/admin/forms';
+import { AdminButton, AdminCard, PageHeader, StatusBadge } from '@/src/components/admin/ui';
+import { resetLocalData, updateAppSettings, useAppState } from '@/src/services/appStore';
+import { logoutAdmin } from '@/src/services/adminAuth';
 import { borderRadius, colors, spacing, typography } from '@/src/theme';
-
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
-
-interface SettingItem {
-  icon: IconName;
-  label: string;
-  desc: string;
-  soon?: boolean;
-}
-
-const GENERAL: SettingItem[] = [
-  { icon: 'color-palette-outline', label: 'Marka ve Görünüm',        desc: 'Logo, renkler ve uygulama metinleri' },
-  { icon: 'pricetags-outline',     label: 'Plan Fiyatları',          desc: 'Aylık, 3 aylık ve yıllık plan ücretleri' },
-  { icon: 'people-circle-outline', label: 'Admin Hesapları',         desc: 'Yönetici kullanıcılar ve yetkiler' },
-];
-
-const INTEGRATIONS: SettingItem[] = [
-  { icon: 'card-outline',          label: 'Ödeme Sağlayıcı',         desc: 'RevenueCat / İyzico entegrasyonu',        soon: true },
-  { icon: 'notifications-outline', label: 'Push Bildirim Servisi',   desc: 'Expo Notifications yapılandırması',       soon: true },
-  { icon: 'server-outline',        label: 'Backend & Veritabanı',    desc: 'API bağlantısı ve veri senkronizasyonu',  soon: true },
-  { icon: 'cloud-outline',         label: 'Medya Depolama',          desc: 'Egzersiz video/GIF dosyaları için CDN',   soon: true },
-];
+import { formatRelativeTime } from '@/src/utils/formatters';
+import { confirmAction, notify } from '@/src/utils/notify';
 
 export default function AdminSettingsScreen() {
+  const settings  = useAppState((s) => s.settings);
+  const exercises = useAppState((s) => s.exercises);
+  const programs  = useAppState((s) => s.programs);
+
+  const [companyName, setCompanyName] = useState(settings.companyName);
+  const [adminEmail, setAdminEmail]   = useState(settings.adminEmail);
+
+  const handleSave = () => {
+    if (!companyName.trim() || !adminEmail.trim()) {
+      notify('Eksik Bilgi', 'Firma adı ve admin e-postası boş bırakılamaz.');
+      return;
+    }
+    updateAppSettings({
+      companyName: companyName.trim(),
+      adminEmail: adminEmail.trim(),
+    });
+    notify('Kaydedildi', 'Genel ayarlar güncellendi.');
+  };
+
+  const handleReset = async () => {
+    const ok = await confirmAction(
+      'Demo Verilerini Sıfırla',
+      'Tüm kullanıcı, üyelik, içerik değişiklikleri ve bildirim geçmişi başlangıç verilerine döndürülecek. Emin misin?',
+    );
+    if (!ok) return;
+    await resetLocalData();
+    notify('Sıfırlandı', 'Yerel veriler başlangıç durumuna döndürüldü.');
+  };
+
   return (
     <>
-      <PageHeader
-        title="Ayarlar"
-        subtitle="Panel ve uygulama yapılandırması"
-      />
+      <PageHeader title="Ayarlar" subtitle="Panel ve uygulama yapılandırması" />
 
-      <AdminCard title="Genel" subtitle="Uygulama geneli ayarlar">
+      {/* Genel */}
+      <AdminCard title="Genel" subtitle="Firma bilgileri ve yönetici hesabı">
+        <FormField
+          label="Firma Adı"
+          value={companyName}
+          onChangeText={setCompanyName}
+          placeholder="The Change PT Studio"
+          maxLength={60}
+        />
+        <FormField
+          label="Admin E-posta"
+          value={adminEmail}
+          onChangeText={setAdminEmail}
+          placeholder="admin@firma.com"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <AdminButton label="Kaydet" icon="checkmark-outline" variant="primary" onPress={handleSave} />
+      </AdminCard>
+
+      {/* Sistem durumu */}
+      <AdminCard title="Sistem Durumu" subtitle="Servis bağlantıları ve içerik senkronizasyonu">
         <View style={styles.list}>
-          {GENERAL.map((item) => (
-            <SettingRow key={item.label} item={item} />
-          ))}
+          <StatusRow
+            icon="card-outline"
+            label="Ödeme Sistemi"
+            desc="İyzico / RevenueCat entegrasyonu"
+            badge={settings.paymentsEnabled ? 'Bağlı' : 'Kurulum Bekliyor'}
+            ok={settings.paymentsEnabled}
+          />
+          <StatusRow
+            icon="notifications-outline"
+            label="Bildirim Sistemi"
+            desc="Expo Push servisi — şu an gönderimler kayıt amaçlı"
+            badge={settings.pushEnabled ? 'Bağlı' : 'Kurulum Bekliyor'}
+            ok={settings.pushEnabled}
+          />
+          <StatusRow
+            icon="sync-outline"
+            label="İçerik Senkronizasyonu"
+            desc={`${exercises.length} egzersiz · ${programs.length} program mobil uygulamayla paylaşılıyor`}
+            badge={
+              settings.lastContentSyncAt
+                ? `Son değişiklik ${formatRelativeTime(settings.lastContentSyncAt)}`
+                : 'Güncel'
+            }
+            ok
+          />
+          <StatusRow
+            icon="phone-portrait-outline"
+            label="Uygulama Versiyonu"
+            desc="Mobil uygulamanın aktif sürümü"
+            badge={`v${settings.appVersion}`}
+            ok
+          />
+          <StatusRow
+            icon="server-outline"
+            label="Veri Kaynağı"
+            desc="Yerel depo aktif — Firebase/Supabase bağlantısı için hazır"
+            badge="Yerel"
+            ok={false}
+          />
         </View>
       </AdminCard>
 
-      <AdminCard title="Entegrasyonlar" subtitle="Harici servis bağlantıları">
-        <View style={styles.list}>
-          {INTEGRATIONS.map((item) => (
-            <SettingRow key={item.label} item={item} />
-          ))}
+      {/* Tehlikeli işlemler */}
+      <AdminCard title="Yönetim" subtitle="Oturum ve veri işlemleri">
+        <View style={styles.actionRow}>
+          <AdminButton label="Çıkış Yap" icon="log-out-outline" variant="ghost" onPress={() => logoutAdmin()} />
+          <AdminButton label="Demo Verilerini Sıfırla" icon="refresh-outline" variant="danger" onPress={handleReset} />
         </View>
       </AdminCard>
 
       <AdminCard>
         <View style={styles.aboutRow}>
           <View>
-            <Text style={styles.aboutTitle}>The Change PT Studio · Admin Panel</Text>
-            <Text style={styles.aboutMeta}>Sürüm 1.0.0 · Önizleme modu · Mock veri aktif</Text>
+            <Text style={styles.aboutTitle}>{settings.companyName} · Admin Panel</Text>
+            <Text style={styles.aboutMeta}>Sürüm 1.0.0 · Yerel veri kaynağı aktif</Text>
           </View>
-          <StatusBadge label="Önizleme" tone="accent" />
+          <StatusBadge label="Çalışıyor" tone="success" />
         </View>
       </AdminCard>
     </>
   );
 }
 
-function SettingRow({ item }: { item: SettingItem }) {
+function StatusRow({
+  icon,
+  label,
+  desc,
+  badge,
+  ok,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  desc: string;
+  badge: string;
+  ok: boolean;
+}) {
   return (
-    <TouchableOpacity
-      style={styles.row}
-      activeOpacity={0.8}
-      onPress={() =>
-        notify(
-          item.label,
-          item.soon
-            ? 'Bu entegrasyon backend kurulumuyla birlikte aktifleşecek.'
-            : 'Bu ayar sayfası backend ile birlikte aktifleşecek.',
-        )
-      }
-    >
+    <View style={styles.row}>
       <View style={styles.rowIcon}>
-        <Ionicons name={item.icon} size={18} color={colors.accent} />
+        <Ionicons name={icon} size={18} color={colors.accent} />
       </View>
       <View style={styles.rowInfo}>
-        <Text style={styles.rowLabel}>{item.label}</Text>
-        <Text style={styles.rowDesc}>{item.desc}</Text>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <Text style={styles.rowDesc}>{desc}</Text>
       </View>
-      {item.soon && <StatusBadge label="Yakında" tone="warning" />}
-      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-    </TouchableOpacity>
+      <StatusBadge label={badge} tone={ok ? 'success' : 'warning'} />
+    </View>
   );
 }
 
@@ -100,6 +165,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 4,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    flexWrap: 'wrap',
   },
   rowIcon: {
     width: 38,
@@ -109,9 +175,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowInfo: { flex: 1 },
+  rowInfo: { flex: 1, minWidth: 180 },
   rowLabel: { ...typography.bodyMedium, color: colors.text, fontWeight: '600' },
   rowDesc: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   aboutRow: {
     flexDirection: 'row',
     alignItems: 'center',

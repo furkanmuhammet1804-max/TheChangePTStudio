@@ -14,14 +14,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ExerciseCard } from '@/src/components/cards/ExerciseCard';
 import { useUser } from '@/src/contexts/UserContext';
 import {
+  DIFFICULTY_LABELS,
   ENVIRONMENT_LABELS,
   EQUIPMENT_LABELS,
   MUSCLE_LABELS,
   MUSCLE_TAGLINES,
 } from '@/src/constants/strings';
-import { exercises } from '@/src/data/exercises';
+import { useAppState } from '@/src/services/appStore';
 import { borderRadius, colors, spacing, typography } from '@/src/theme';
-import { Environment, Equipment, MuscleGroup } from '@/src/types';
+import { Difficulty, Environment, Equipment, MuscleGroup } from '@/src/types';
 
 const MUSCLE_GROUPS = [
   'all',
@@ -37,7 +38,9 @@ const MUSCLE_GROUPS = [
   'mobility',
 ] as const;
 
-const ENVIRONMENTS = ['all', 'home', 'gym', 'outdoor'] as const;
+const ENVIRONMENTS = ['all', 'home', 'gym', 'outdoor', 'travel'] as const;
+
+const DIFFICULTIES = ['all', 'beginner', 'intermediate', 'advanced'] as const;
 
 const EQUIPMENT_OPTIONS = [
   'all',
@@ -54,14 +57,18 @@ const EQUIPMENT_OPTIONS = [
 type MuscleFilter      = 'all' | MuscleGroup;
 type EnvironmentFilter = 'all' | Environment;
 type EquipmentFilter   = 'all' | Equipment;
+type DifficultyFilter  = 'all' | Difficulty;
 
 export default function ExercisesScreen() {
   const params = useLocalSearchParams<{ muscle?: string; favorites?: string }>();
   const { favoriteExerciseIds } = useUser();
+  // Ortak depodan: admin panelden eklenen/düzenlenen egzersizler de listelenir
+  const exercises = useAppState((s) => s.exercises);
 
   const [activeGroup, setActiveGroup]         = useState<MuscleFilter>('all');
   const [activeEnv, setActiveEnv]             = useState<EnvironmentFilter>('all');
   const [activeEquipment, setActiveEquipment] = useState<EquipmentFilter>('all');
+  const [activeDifficulty, setActiveDifficulty] = useState<DifficultyFilter>('all');
   const [favoritesOnly, setFavoritesOnly]     = useState(false);
   const [search, setSearch]                   = useState('');
 
@@ -89,6 +96,9 @@ export default function ExercisesScreen() {
     if (activeEquipment !== 'all') {
       list = list.filter((e) => e.equipment === activeEquipment);
     }
+    if (activeDifficulty !== 'all') {
+      list = list.filter((e) => e.difficulty === activeDifficulty || e.difficulty === 'all');
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -98,7 +108,7 @@ export default function ExercisesScreen() {
       );
     }
     return list;
-  }, [activeGroup, activeEnv, activeEquipment, favoritesOnly, search, favoriteExerciseIds]);
+  }, [exercises, activeGroup, activeEnv, activeEquipment, activeDifficulty, favoritesOnly, search, favoriteExerciseIds]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -172,7 +182,13 @@ export default function ExercisesScreen() {
         {ENVIRONMENTS.map((env) => (
           <FilterChip
             key={`env_${env}`}
-            icon={env === 'home' ? 'home-outline' : env === 'gym' ? 'barbell-outline' : env === 'outdoor' ? 'sunny-outline' : undefined}
+            icon={
+              env === 'home' ? 'home-outline'
+              : env === 'gym' ? 'barbell-outline'
+              : env === 'outdoor' ? 'sunny-outline'
+              : env === 'travel' ? 'airplane-outline'
+              : undefined
+            }
             label={env === 'all' ? 'Her Ortam' : ENVIRONMENT_LABELS[env]}
             active={activeEnv === env}
             onPress={() => setActiveEnv(env)}
@@ -185,6 +201,15 @@ export default function ExercisesScreen() {
             label={eq === 'all' ? 'Her Ekipman' : EQUIPMENT_LABELS[eq]}
             active={activeEquipment === eq}
             onPress={() => setActiveEquipment(eq)}
+          />
+        ))}
+        <View style={styles.filterDivider} />
+        {DIFFICULTIES.map((d) => (
+          <FilterChip
+            key={`diff_${d}`}
+            label={d === 'all' ? 'Her Seviye' : DIFFICULTY_LABELS[d]}
+            active={activeDifficulty === d}
+            onPress={() => setActiveDifficulty(d)}
           />
         ))}
       </ScrollView>

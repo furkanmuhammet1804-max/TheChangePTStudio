@@ -13,3 +13,20 @@ export function notify(title: string, message?: string) {
     Alert.alert(title, message);
   }
 }
+
+/**
+ * Onay diyaloğu — silme gibi geri alınamaz işlemler için.
+ * Web'de window.confirm, native'de Alert butonları kullanılır.
+ */
+export function confirmAction(title: string, message: string): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    const g = globalThis as { confirm?: (msg: string) => boolean };
+    return Promise.resolve(g.confirm?.(`${title}\n\n${message}`) ?? false);
+  }
+  return new Promise((resolve) => {
+    Alert.alert(title, message, [
+      { text: 'Vazgeç', style: 'cancel', onPress: () => resolve(false) },
+      { text: 'Onayla', style: 'destructive', onPress: () => resolve(true) },
+    ]);
+  });
+}

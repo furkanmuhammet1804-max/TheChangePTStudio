@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PremiumLockCard } from '@/src/components/premium/PremiumLockCard';
+import { UPGRADE_MESSAGES } from '@/src/constants/strings';
 import { colors, borderRadius, spacing, typography } from '@/src/theme';
+import { hapticWarning } from '@/src/utils/haptics';
 
 interface LockedFeature {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -13,7 +15,8 @@ interface LockedScreenProps {
   headerTitle: string;
   headerSubtitle?: string;
   lockTitle: string;
-  lockMessage: string;
+  /** Verilmezse genel nazik yükseltme mesajı gösterilir */
+  lockMessage?: string;
   /** What the user will get — shown as a value preview, not a sales pitch */
   features?: LockedFeature[];
 }
@@ -26,9 +29,14 @@ export function LockedScreen({
   headerTitle,
   headerSubtitle,
   lockTitle,
-  lockMessage,
+  lockMessage = UPGRADE_MESSAGES.generic,
   features = [],
 }: LockedScreenProps) {
+  // Premium kilit ekranı açıldığında hafif uyarı haptiği
+  useEffect(() => {
+    hapticWarning();
+  }, []);
+
   return (
     <ScrollView
       style={styles.scroll}

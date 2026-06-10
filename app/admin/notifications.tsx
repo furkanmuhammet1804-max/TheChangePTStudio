@@ -1,91 +1,91 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FormField } from '@/src/components/admin/forms';
 import { AdminButton, AdminCard, PageHeader, StatusBadge } from '@/src/components/admin/ui';
-import {
-  AUDIENCE_LABELS,
-  AUDIENCE_REACH,
-  MOCK_SENT_NOTIFICATIONS,
-  SentNotification,
-} from '@/src/data/adminMock';
-import { notify } from '@/src/utils/notify';
+import { AUDIENCE_LABELS } from '@/src/constants/strings';
+import { useAppState } from '@/src/services/appStore';
+import { getDataSource } from '@/src/services/dataSource';
+import { audienceUsers } from '@/src/services/notificationService';
 import { borderRadius, colors, spacing, typography } from '@/src/theme';
 import { NotificationAudience } from '@/src/types/admin';
+import { formatRelativeTime } from '@/src/utils/formatters';
+import { notify } from '@/src/utils/notify';
 
 const AUDIENCES: NotificationAudience[] = ['all', 'premium', 'free'];
 
+const AUDIENCE_ICONS: Record<NotificationAudience, 'people-outline' | 'star-outline' | 'person-outline'> = {
+  all: 'people-outline',
+  premium: 'star-outline',
+  free: 'person-outline',
+};
+
 export default function AdminNotificationsScreen() {
+  const users     = useAppState((s) => s.users);
+  const campaigns = useAppState((s) => s.campaigns);
+  const settings  = useAppState((s) => s.settings);
+
   const [title, setTitle]       = useState('');
   const [body, setBody]         = useState('');
   const [audience, setAudience] = useState<NotificationAudience>('all');
-  const [history, setHistory]   = useState<SentNotification[]>(MOCK_SENT_NOTIFICATIONS);
+  const [sending, setSending]   = useState(false);
 
-  const handleSend = () => {
+  const reach = audienceUsers(users, audience).length;
+
+  const handleSend = async () => {
     if (!title.trim() || !body.trim()) {
       notify('Eksik Bilgi', 'Başlık ve mesaj alanlarını doldurmalısın.');
       return;
     }
-    // Push altyapısı bağlanana kadar gönderim yereldir — geçmişe eklenir
-    const sent: SentNotification = {
-      id: `n_${Date.now()}`,
-      title: title.trim(),
-      body: body.trim(),
-      audience,
-      sentAt: 'Az önce',
-      reach: AUDIENCE_REACH[audience],
-    };
-    setHistory((h) => [sent, ...h]);
-    setTitle('');
-    setBody('');
-    notify(
-      'Bildirim Kuyruğa Alındı (Mock)',
-      `"${sent.title}" — ${AUDIENCE_LABELS[audience]} (${sent.reach} kullanıcı). Gerçek gönderim push altyapısı bağlanınca aktifleşecek.`,
-    );
+    if (sending) return;
+    setSending(true);
+    try {
+      const campaign = await getDataSource().notifications.sendCampaign({
+        title: title.trim(),
+        body: body.trim(),
+        audience,
+      });
+      setTitle('');
+      setBody('');
+      notify(
+        'Bildirim Gönderildi',
+        `"${campaign.title}" — ${AUDIENCE_LABELS[audience]} (${campaign.reach} kullanıcı).` +
+          (settings.pushEnabled ? '' : ' Push servisi bağlanana kadar gönderim kayıt amaçlıdır.'),
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <>
       <PageHeader
         title="Bildirim Yönetimi"
-        subtitle="Push bildirimleri oluştur ve hedef kitleye gönder"
+        subtitle="Bildirim oluştur ve hedef kitleye gönder"
       />
 
       <View style={styles.columns}>
-        {/* Compose */}
+        {/* Yeni bildirim */}
         <AdminCard
           title="Yeni Bildirim"
           subtitle="Kullanıcılara anlık bildirim gönder"
           style={styles.composeCard}
         >
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>BAŞLIK</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Örn: Yeni programlar yayında!"
-              placeholderTextColor={colors.textMuted}
-              value={title}
-              onChangeText={setTitle}
-              selectionColor={colors.accent}
-              maxLength={60}
-            />
-            <Text style={styles.charCount}>{title.length}/60</Text>
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>MESAJ</Text>
-            <TextInput
-              style={[styles.input, styles.inputMultiline]}
-              placeholder="Bildirim mesajını yaz..."
-              placeholderTextColor={colors.textMuted}
-              value={body}
-              onChangeText={setBody}
-              selectionColor={colors.accent}
-              multiline
-              numberOfLines={4}
-              maxLength={180}
-            />
-            <Text style={styles.charCount}>{body.length}/180</Text>
-          </View>
+          <FormField
+            label="Başlık"
+            value={title}
+            onChangeText={setTitle}
+            placeholder="Örn: Yeni programlar yayında!"
+            maxLength={60}
+          />
+          <FormField
+            label="Mesaj"
+            value={body}
+            onChangeText={setBody}
+            placeholder="Bildirim mesajını yaz..."
+            multiline
+            maxLength={180}
+          />
 
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>HEDEF KİTLE</Text>
@@ -98,7 +98,7 @@ export default function AdminNotificationsScreen() {
                   activeOpacity={0.8}
                 >
                   <Ionicons
-                    name={a === 'all' ? 'people-outline' : a === 'premium' ? 'star-outline' : 'person-outline'}
+                    name={AUDIENCE_ICONS[a]}
                     size={14}
                     color={audience === a ? colors.background : colors.textSecondary}
                   />
@@ -108,45 +108,49 @@ export default function AdminNotificationsScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.reachText}>
-              Tahmini erişim: {AUDIENCE_REACH[audience]} kullanıcı
-            </Text>
+            <Text style={styles.reachText}>Hedef kitle: {reach} kullanıcı</Text>
           </View>
 
           <AdminButton
-            label="Bildirim Gönder"
+            label={sending ? 'Gönderiliyor...' : 'Bildirim Gönder'}
             icon="send-outline"
             variant="primary"
             onPress={handleSend}
           />
         </AdminCard>
 
-        {/* History */}
+        {/* Geçmiş */}
         <AdminCard
           title="Gönderim Geçmişi"
           subtitle="Son gönderilen bildirimler"
           style={styles.historyCard}
         >
-          <View style={styles.historyList}>
-            {history.map((n) => (
-              <View key={n.id} style={styles.historyItem}>
-                <View style={styles.historyIcon}>
-                  <Ionicons name="notifications" size={16} color={colors.accent} />
-                </View>
-                <View style={styles.historyInfo}>
-                  <Text style={styles.historyTitle} numberOfLines={1}>{n.title}</Text>
-                  <Text style={styles.historyBody} numberOfLines={2}>{n.body}</Text>
-                  <View style={styles.historyMetaRow}>
-                    <StatusBadge
-                      label={AUDIENCE_LABELS[n.audience]}
-                      tone={n.audience === 'premium' ? 'gold' : n.audience === 'free' ? 'muted' : 'accent'}
-                    />
-                    <Text style={styles.historyMeta}>{n.sentAt} · {n.reach} alıcı</Text>
+          {campaigns.length === 0 ? (
+            <Text style={styles.emptyText}>Henüz bildirim gönderilmedi.</Text>
+          ) : (
+            <View style={styles.historyList}>
+              {campaigns.map((n) => (
+                <View key={n.id} style={styles.historyItem}>
+                  <View style={styles.historyIcon}>
+                    <Ionicons name="notifications" size={16} color={colors.accent} />
+                  </View>
+                  <View style={styles.historyInfo}>
+                    <Text style={styles.historyTitle} numberOfLines={1}>{n.title}</Text>
+                    <Text style={styles.historyBody} numberOfLines={2}>{n.body}</Text>
+                    <View style={styles.historyMetaRow}>
+                      <StatusBadge
+                        label={AUDIENCE_LABELS[n.audience]}
+                        tone={n.audience === 'premium' ? 'gold' : n.audience === 'free' ? 'muted' : 'accent'}
+                      />
+                      <Text style={styles.historyMeta}>
+                        {formatRelativeTime(n.sentAt ?? n.createdAt)} · {n.reach} alıcı
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </AdminCard>
       </View>
     </>
@@ -160,19 +164,6 @@ const styles = StyleSheet.create({
 
   field: { gap: spacing.sm },
   fieldLabel: { ...typography.label, color: colors.textSecondary, letterSpacing: 1 },
-  input: {
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
-    ...typography.bodySmall,
-    color: colors.text,
-  },
-  inputMultiline: { minHeight: 96, textAlignVertical: 'top' },
-  charCount: { ...typography.caption, color: colors.textMuted, alignSelf: 'flex-end' },
-
   audienceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   audienceChip: {
     flexDirection: 'row',
@@ -190,6 +181,7 @@ const styles = StyleSheet.create({
   audienceLabelActive: { color: colors.background },
   reachText: { ...typography.caption, color: colors.accent },
 
+  emptyText: { ...typography.bodySmall, color: colors.textMuted },
   historyList: { gap: spacing.sm },
   historyItem: {
     flexDirection: 'row',

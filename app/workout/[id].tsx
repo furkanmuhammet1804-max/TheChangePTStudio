@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WorkoutExerciseRow } from '@/src/components/cards/WorkoutExerciseRow';
 import { Button } from '@/src/components/ui/Button';
 import { DIFFICULTY_LABELS } from '@/src/constants/strings';
-import { getExerciseById } from '@/src/data/exercises';
+import { findExerciseById } from '@/src/services/appStore';
 import { getWorkoutById } from '@/src/data/workouts';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 import { formatDuration } from '@/src/utils/formatters';
@@ -71,7 +71,7 @@ export default function WorkoutDetailScreen() {
           <Text style={styles.sectionTitle}>Hareketler</Text>
 
           {workout.exercises.map((we, i) => {
-            const exercise = getExerciseById(we.exerciseId);
+            const exercise = findExerciseById(we.exerciseId);
             if (!exercise) return null;
             return (
               <WorkoutExerciseRow

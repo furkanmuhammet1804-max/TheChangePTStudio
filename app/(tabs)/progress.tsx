@@ -16,8 +16,10 @@ import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { useUser } from '@/src/contexts/UserContext';
 import { UPGRADE_MESSAGES } from '@/src/constants/strings';
 import { getWorkoutById } from '@/src/data/workouts';
+import { evaluateAchievements } from '@/src/lib/achievements';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 import { calcBMI, formatDate, formatSeconds, formatWeight } from '@/src/utils/formatters';
+import { notify } from '@/src/utils/notify';
 
 export default function ProgressScreen() {
   const {
@@ -31,6 +33,7 @@ export default function ProgressScreen() {
     activeProgram,
     isPremium,
     getProgram,
+    favoriteExerciseIds,
   } = useUser();
 
   const [weightModalVisible, setWeightModalVisible] = useState(false);
@@ -85,6 +88,19 @@ export default function ProgressScreen() {
       .filter((l) => l.date >= weekStart)
       .reduce((sum, l) => sum + l.totalVolume, 0);
   }, [workoutLogs]);
+
+  // Başarılar — gerçek kullanıcı verisinden hesaplanır (src/lib/achievements)
+  const achievements = useMemo(
+    () =>
+      evaluateAchievements({
+        totalWorkouts,
+        currentStreak,
+        favoriteCount: favoriteExerciseIds.length,
+        workoutLogs,
+        activeProgram,
+      }),
+    [totalWorkouts, currentStreak, favoriteExerciseIds, workoutLogs, activeProgram],
+  );
 
   const handleAddWeight = async () => {
     const w = parseFloat(newWeight);
@@ -269,23 +285,33 @@ export default function ProgressScreen() {
 
         {/* Achievements */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Başarılar</Text>
-          <AchievementItem icon="barbell-outline"  label="İlk Antrenman"         unlocked={totalWorkouts >= 1}  />
-          <AchievementItem icon="flame-outline"    label="5 Antrenman Tamamlandı"  unlocked={totalWorkouts >= 5}  />
-          <AchievementItem icon="medal-outline"    label="10 Antrenman Tamamlandı" unlocked={totalWorkouts >= 10} />
-          <AchievementItem icon="star-outline"     label="30 Antrenman Tamamlandı" unlocked={totalWorkouts >= 30} />
-          <AchievementItem icon="ribbon-outline"   label="7 Günlük Seri"           unlocked={currentStreak >= 7}  />
-          <AchievementItem icon="trophy-outline"   label="30 Günlük Seri"          unlocked={currentStreak >= 30} />
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Başarılar</Text>
+            <Text style={styles.achievementCount}>
+              {achievements.filter((a) => a.unlocked).length}/{achievements.length}
+            </Text>
+          </View>
+          {achievements.map((a) => (
+            <AchievementItem
+              key={a.id}
+              icon={a.icon}
+              label={a.title}
+              description={a.description}
+              unlocked={a.unlocked}
+            />
+          ))}
         </View>
 
-        {/* Before/After Placeholder */}
+        {/* Transformation: önce / sonra */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Önce / Sonra</Text>
           <View style={styles.photoRow}>
             <PhotoPlaceholder label="Önce" />
             <PhotoPlaceholder label="Sonra" />
           </View>
-          <Text style={styles.photoHint}>Fotoğraf özelliği yakında geliyor</Text>
+          <Text style={styles.photoHint}>
+            Dönüşümünü belgelemek için önce/sonra fotoğraflarını ekle
+          </Text>
         </View>
       </ScrollView>
 
@@ -380,18 +406,22 @@ function WeightPoint({ label, value, accent }: { label: string; value: string; a
 }
 
 function AchievementItem({
-  icon, label, unlocked,
+  icon, label, description, unlocked,
 }: {
-  icon:     React.ComponentProps<typeof Ionicons>['name'];
-  label:    string;
-  unlocked: boolean;
+  icon:        React.ComponentProps<typeof Ionicons>['name'];
+  label:       string;
+  description: string;
+  unlocked:    boolean;
 }) {
   return (
     <View style={achieveStyles.row}>
       <View style={[achieveStyles.iconBox, unlocked && achieveStyles.iconBoxActive]}>
         <Ionicons name={icon} size={20} color={unlocked ? colors.gold : colors.textMuted} />
       </View>
-      <Text style={[achieveStyles.label, !unlocked && achieveStyles.labelLocked]}>{label}</Text>
+      <View style={achieveStyles.info}>
+        <Text style={[achieveStyles.label, !unlocked && achieveStyles.labelLocked]}>{label}</Text>
+        <Text style={achieveStyles.desc}>{description}</Text>
+      </View>
       {unlocked && <Ionicons name="checkmark-circle" size={18} color={colors.success} />}
     </View>
   );
@@ -408,16 +438,27 @@ const achieveStyles = StyleSheet.create({
   },
   iconBox:       { width: 40, height: 40, borderRadius: borderRadius.md, backgroundColor: colors.surfaceSecondary, alignItems: 'center', justifyContent: 'center' },
   iconBoxActive: { backgroundColor: colors.goldMuted },
-  label:         { ...typography.bodyMedium, color: colors.text, flex: 1 },
+  info:          { flex: 1, gap: 1 },
+  label:         { ...typography.bodyMedium, color: colors.text },
   labelLocked:   { color: colors.textMuted },
+  desc:          { ...typography.caption, color: colors.textSecondary },
 });
 
 function PhotoPlaceholder({ label }: { label: string }) {
   return (
-    <View style={photoStyles.box}>
-      <Ionicons name="camera-outline" size={32} color={colors.textMuted} />
+    <TouchableOpacity
+      style={photoStyles.box}
+      activeOpacity={0.8}
+      onPress={() =>
+        notify('Fotoğraf Ekle', 'Fotoğraf yükleme, depolama altyapısı bağlandığında aktifleşecek.')
+      }
+      accessibilityRole="button"
+      accessibilityLabel={`${label} fotoğrafı ekle`}
+    >
+      <Ionicons name="add-circle-outline" size={32} color={colors.accent} />
       <Text style={photoStyles.label}>{label}</Text>
-    </View>
+      <Text style={photoStyles.hint}>Fotoğraf Ekle</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -435,6 +476,7 @@ const photoStyles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   label: { ...typography.label, color: colors.textMuted },
+  hint:  { ...typography.caption, color: colors.accent },
 });
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
@@ -473,6 +515,7 @@ const styles = StyleSheet.create({
   weekBadgeText: { ...typography.caption, color: colors.accent },
 
   volumeValue: { ...typography.h3, color: colors.accent },
+  achievementCount: { ...typography.bodySmall, color: colors.gold, fontWeight: '700' },
 
   addBtn: {
     flexDirection: 'row',

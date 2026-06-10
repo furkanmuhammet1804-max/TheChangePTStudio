@@ -18,6 +18,15 @@ import {
   WorkoutLog,
 } from '@/src/types';
 import { getProgramById } from '@/src/data/programs';
+import {
+  DEVICE_USER_ID,
+  findProgramById,
+  getAppState,
+  initAppStore,
+  subscribeAppStore,
+  syncDeviceUser,
+} from '@/src/services/appStore';
+import { hapticSuccess } from '@/src/utils/haptics';
 
 // ─── Storage keys ──────────────────────────────────────────────────────────
 const USER_KEY         = '@tcp_user_profile';
@@ -42,6 +51,9 @@ interface UserContextType {
   membership:    MembershipTier;
   isPremium:     boolean;
   setMembership: (tier: MembershipTier) => Promise<void>;
+
+  // Admin panelden bu kullanıcıya atanan programlar
+  assignedProgramIds: string[];
 
   // Favorite exercises
   favoriteExerciseIds:    string[];
@@ -119,12 +131,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [membership,           setMembershipState]      = useState<MembershipTier>('free');
   const [favoriteExerciseIds,  setFavoriteExerciseIds]  = useState<string[]>([]);
   const [customProgram,        setCustomProgram]        = useState<Program | null>(null);
+  const [assignedProgramIds,   setAssignedProgramIds]   = useState<string[]>([]);
   const [loading,              setLoading]              = useState(true);
 
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
     try {
+      // Ortak veri deposu (admin panel ile paylaşılan) önce hazır olmalı
+      await initAppStore();
       const [profJ, onbStr, progJ, activePJ, logsJ, memStr, favJ, customJ] = await Promise.all([
         AsyncStorage.getItem(USER_KEY),
         AsyncStorage.getItem(ONBOARDING_KEY),
@@ -147,6 +162,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   }
+
+  // ── Admin panel → mobil senkron ───────────────────────────────────────────
+  // Admin panel cihaz kullanıcısını premium yaptığında / program atadığında
+  // ortak depo değişir; burada dinleyip yerel state'e yansıtırız.
+  useEffect(() => {
+    const apply = () => {
+      const account = getAppState().users.find((u) => u.id === DEVICE_USER_ID);
+      if (!account) return;
+      setMembershipState((prev) => {
+        if (prev === account.membership) return prev;
+        AsyncStorage.setItem(MEMBERSHIP_KEY, account.membership).catch(() => {});
+        return account.membership;
+      });
+      setAssignedProgramIds((prev) =>
+        prev.length === account.assignedProgramIds.length &&
+        prev.every((id, i) => id === account.assignedProgramIds[i])
+          ? prev
+          : account.assignedProgramIds,
+      );
+    };
+    apply();
+    return subscribeAppStore(apply);
+  }, []);
 
   // ── Profile ──────────────────────────────────────────────────────────────
   const saveProfile = useCallback(async (p: UserProfile) => {
@@ -188,7 +226,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const getProgram = useCallback(
     (programId: string): Program | undefined => {
       if (customProgram && customProgram.id === programId) return customProgram;
-      return getProgramById(programId);
+      // Admin panelden eklenen/düzenlenen programlar dahil birleşik katalog
+      return findProgramById(programId) ?? getProgramById(programId);
     },
     [customProgram],
   );
@@ -212,6 +251,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     await AsyncStorage.setItem(ACTIVE_PROG_KEY, JSON.stringify(ap));
     setActiveProgram(ap);
+    hapticSuccess(); // program başlatıldı
   }, []);
 
   const advanceProgramDay = useCallback(async (_log: WorkoutLog) => {
@@ -327,12 +367,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const totalWorkouts = workoutLogs.length;
 
+  // ── Mobil → admin panel senkron ───────────────────────────────────────────
+  // Profil, üyelik, favoriler ve antrenman istatistikleri ortak depodaki
+  // cihaz kullanıcısı kaydına yazılır; admin panel bunları canlı gösterir.
+  useEffect(() => {
+    if (loading || !profile) return;
+    const lastLog = workoutLogs[workoutLogs.length - 1];
+    syncDeviceUser({
+      profile,
+      membership,
+      stats: {
+        totalWorkouts,
+        currentStreak,
+        weeklyWorkouts: weeklyCompletedCount,
+        favoriteCount: favoriteExerciseIds.length,
+        lastWorkoutAt: lastLog?.completedAt,
+        activeProgramId: activeProgram?.programId,
+        recentWorkouts: workoutLogs.slice(-5).reverse().map((log) => ({
+          date: log.date,
+          workoutId: log.workoutId,
+          durationSeconds: log.durationSeconds,
+          totalVolume: log.totalVolume,
+        })),
+      },
+    });
+  }, [
+    loading, profile, membership, workoutLogs, favoriteExerciseIds,
+    activeProgram, weeklyCompletedCount, currentStreak, totalWorkouts,
+  ]);
+
   // ── Context value ─────────────────────────────────────────────────────────
   const value = useMemo<UserContextType>(
     () => ({
       profile, isOnboardingComplete, loading,
       saveProfile, completeOnboarding,
       membership, isPremium: membership === 'premium', setMembership,
+      assignedProgramIds,
       favoriteExerciseIds, toggleFavoriteExercise, isFavoriteExercise,
       customProgram, saveCustomProgram, getProgram,
       progress, addWeightEntry,
@@ -345,6 +415,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       profile, isOnboardingComplete, loading,
       saveProfile, completeOnboarding,
       membership, setMembership,
+      assignedProgramIds,
       favoriteExerciseIds, toggleFavoriteExercise, isFavoriteExercise,
       customProgram, saveCustomProgram, getProgram,
       progress, addWeightEntry,

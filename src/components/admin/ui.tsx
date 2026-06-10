@@ -147,6 +147,8 @@ export function AdminButton({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={[
         styles.btn,
         isSm && styles.btnSm,

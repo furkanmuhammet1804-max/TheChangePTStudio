@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -14,12 +15,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
+import { WorkoutShareCard } from '@/src/components/workout/WorkoutShareCard';
 import { useUser } from '@/src/contexts/UserContext';
-import { getExerciseById } from '@/src/data/exercises';
+import { findExerciseById } from '@/src/services/appStore';
 import { getWorkoutById } from '@/src/data/workouts';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
-import { ExerciseLog, SetLog, WorkoutLog } from '@/src/types';
+import { Exercise, ExerciseLog, SetLog, WorkoutLog } from '@/src/types';
 import { formatSeconds } from '@/src/utils/formatters';
+import { hapticConfirm, hapticSuccess, hapticTap, hapticWarning } from '@/src/utils/haptics';
 
 type PlayerState = 'active' | 'resting' | 'done';
 
@@ -56,7 +59,7 @@ function parseReps(str: string, fallback: number): number {
 
 export default function WorkoutPlayerScreen() {
   const { workoutId } = useLocalSearchParams<{ workoutId: string }>();
-  const { activeProgram, saveWorkoutLog, advanceProgramDay, getLastExerciseSets, getProgram } = useUser();
+  const { activeProgram, saveWorkoutLog, advanceProgramDay, getLastExerciseSets, getProgram, isPremium } = useUser();
   const workout = getWorkoutById(workoutId ?? '');
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -73,6 +76,9 @@ export default function WorkoutPlayerScreen() {
   const [currentReps, setCurrentReps]     = useState('');
   const [nextUpInfo, setNextUpInfo]       = useState<NextUpInfo | null>(null);
   const [completedLog, setCompletedLog]   = useState<WorkoutLog | null>(null);
+  // Premium: "Hareketi Değiştir" — egzersiz indexi → seçilen alternatif id
+  const [exerciseOverrides, setExerciseOverrides] = useState<Record<number, string>>({});
+  const [swapModalOpen, setSwapModalOpen] = useState(false);
 
   // ── Refs ──────────────────────────────────────────────────────────────────
   const elapsedRef      = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -83,7 +89,14 @@ export default function WorkoutPlayerScreen() {
   // ── Derived values ────────────────────────────────────────────────────────
   const totalExercises  = workout?.exercises.length ?? 0;
   const currentWE       = workout?.exercises[exerciseIndex];
-  const currentExercise = getExerciseById(currentWE?.exerciseId ?? '');
+  // Alternatifle değiştirilmişse override edilen id kullanılır (loglar da buna yazılır)
+  const effectiveExerciseId = exerciseOverrides[exerciseIndex] ?? currentWE?.exerciseId ?? '';
+  const currentExercise = findExerciseById(effectiveExerciseId);
+  const swapAlternatives: Exercise[] = isPremium
+    ? (currentExercise?.alternatives ?? [])
+        .map((altId) => findExerciseById(altId))
+        .filter((e): e is Exercise => !!e)
+    : [];
   const overallProgress =
     totalExercises > 0
       ? (exerciseIndex + (setNumber - 1) / (currentWE?.sets ?? 1)) / totalExercises
@@ -94,7 +107,6 @@ export default function WorkoutPlayerScreen() {
   // ── Effects ───────────────────────────────────────────────────────────────
 
   // Pre-populate inputs when exercise/set changes (values are derived from deps)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (lastSetForCurrent) {
       setCurrentWeight(lastSetForCurrent.weight !== null ? String(lastSetForCurrent.weight) : '');
@@ -103,6 +115,7 @@ export default function WorkoutPlayerScreen() {
       setCurrentWeight('');
       setCurrentReps(currentWE?.reps?.match(/^\d+/)?.[0] ?? '');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exerciseIndex, setNumber]);
 
   // Elapsed timer
@@ -183,6 +196,7 @@ export default function WorkoutPlayerScreen() {
 
     setCompletedLog(log);
     setPlayerState('done');
+    hapticSuccess(); // antrenman bitti
   }, [workout, startedAt, activeProgram, saveWorkoutLog, advanceProgramDay, getProgram]);
 
   const handleSetDone = useCallback(() => {
@@ -194,11 +208,13 @@ export default function WorkoutPlayerScreen() {
     const reps         = parseReps(currentReps, fallbackReps);
     const setLog: SetLog = { setNumber, weight, reps };
 
-    const newLogs        = buildUpdatedLogs(exerciseLogs, currentWE.exerciseId, setLog);
+    const newLogs        = buildUpdatedLogs(exerciseLogs, effectiveExerciseId, setLog);
     setExerciseLogs(newLogs);
 
     const isLastSet      = setNumber >= currentWE.sets;
     const isLastExercise = exerciseIndex + 1 >= totalExercises;
+
+    hapticConfirm(); // set tamamlandı
 
     if (!isLastSet) {
       setNextUpInfo({ name: currentExercise?.name ?? '', detail: `Set ${setNumber + 1}/${currentWE.sets} · ${currentWE.reps}` });
@@ -208,7 +224,7 @@ export default function WorkoutPlayerScreen() {
       isProcessingRef.current = false;
     } else if (!isLastExercise) {
       const nextWE2 = workout.exercises[exerciseIndex + 1];
-      const nextEx2 = getExerciseById(nextWE2.exerciseId);
+      const nextEx2 = findExerciseById(nextWE2.exerciseId);
       setNextUpInfo({ name: nextEx2?.name ?? '', detail: `${nextWE2.sets} set · ${nextWE2.reps}` });
       setRestDuration(currentWE.rest);
       setExerciseIndex((i) => i + 1);
@@ -219,7 +235,7 @@ export default function WorkoutPlayerScreen() {
       handleFinish(newLogs); // async — isProcessingRef stays true; done screen will block further input
     }
   }, [
-    workout, currentWE, setNumber, exerciseIndex, totalExercises,
+    workout, currentWE, setNumber, exerciseIndex, totalExercises, effectiveExerciseId,
     currentWeight, currentReps, exerciseLogs, currentExercise, handleFinish,
   ]);
 
@@ -229,10 +245,17 @@ export default function WorkoutPlayerScreen() {
   }, []);
 
   const handleQuit = () => {
-    Alert.alert('Antrenmandan Çık', 'İlerleme kaydedilmeyecek. Çıkmak istediğine emin misin?', [
+    hapticWarning();
+    Alert.alert('Antrenmandan çıkmak istiyor musun?', 'Kaydedilmemiş setlerin silinebilir.', [
       { text: 'Devam Et', style: 'cancel' },
       { text: 'Çık', style: 'destructive', onPress: () => router.back() },
     ]);
+  };
+
+  const handleSwapExercise = (alternative: Exercise) => {
+    hapticTap();
+    setExerciseOverrides((prev) => ({ ...prev, [exerciseIndex]: alternative.id }));
+    setSwapModalOpen(false);
   };
 
   // ── Conditional renders (after ALL hooks) ─────────────────────────────────
@@ -259,7 +282,10 @@ export default function WorkoutPlayerScreen() {
 
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.doneContainer}>
+        <ScrollView
+          contentContainerStyle={styles.doneContainer}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.doneIcon}>
             <Ionicons name="trophy" size={64} color={colors.gold} />
           </View>
@@ -275,18 +301,27 @@ export default function WorkoutPlayerScreen() {
             )}
           </View>
 
+          <WorkoutShareCard log={completedLog} workoutName={workout.name} />
+
           <TouchableOpacity
             style={styles.doneBtn}
             onPress={() => router.replace('/(tabs)/progress')}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Gelişim ekranına git"
           >
             <Text style={styles.doneBtnLabel}>GELİŞİME GİT</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.replace('/(tabs)')} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => router.replace('/(tabs)')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Ana sayfaya dön"
+          >
             <Text style={styles.homeLink}>Ana Sayfaya Dön</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -327,14 +362,26 @@ export default function WorkoutPlayerScreen() {
       >
         {/* Top Bar */}
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={handleQuit} style={styles.iconBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={handleQuit}
+            style={styles.iconBtn}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Antrenmandan çık"
+          >
             <Ionicons name="close" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.timerBox}>
             <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
             <Text style={styles.timer}>{formatSeconds(elapsed)}</Text>
           </View>
-          <TouchableOpacity onPress={() => setIsPaused((p) => !p)} style={styles.iconBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => setIsPaused((p) => !p)}
+            style={styles.iconBtn}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={isPaused ? 'Antrenmana devam et' : 'Antrenmanı duraklat'}
+          >
             <Ionicons name={isPaused ? 'play' : 'pause'} size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -359,6 +406,21 @@ export default function WorkoutPlayerScreen() {
             <Text style={styles.muscleGroup}>
               {currentExercise?.muscleGroup?.toUpperCase().replace('_', ' ')}
             </Text>
+            {swapAlternatives.length > 0 && (
+              <TouchableOpacity
+                style={styles.swapBtn}
+                onPress={() => {
+                  hapticTap();
+                  setSwapModalOpen(true);
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Hareketi değiştir"
+              >
+                <Ionicons name="swap-horizontal-outline" size={14} color={colors.accent} />
+                <Text style={styles.swapBtnLabel}>Hareketi Değiştir</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Set Badges */}
@@ -438,7 +500,7 @@ export default function WorkoutPlayerScreen() {
                 {setNumber < (currentWE?.sets ?? 1)
                   ? `Sonraki set: ${currentExercise?.name} · Set ${setNumber + 1}/${currentWE?.sets}`
                   : exerciseIndex + 1 < totalExercises
-                    ? `Sonraki: ${getExerciseById(workout.exercises[exerciseIndex + 1]?.exerciseId)?.name ?? ''}`
+                    ? `Sonraki: ${findExerciseById(workout.exercises[exerciseIndex + 1]?.exerciseId)?.name ?? ''}`
                     : ''}
               </Text>
             </View>
@@ -467,6 +529,8 @@ export default function WorkoutPlayerScreen() {
             style={styles.doneSetBtn}
             onPress={handleSetDone}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={isLastAction ? 'Antrenmanı bitir' : 'Seti tamamla'}
           >
             <Text style={styles.doneSetLabel}>
               {isLastAction ? 'ANTREMANı BİTİR' : 'SET TAMAM'}
@@ -474,6 +538,49 @@ export default function WorkoutPlayerScreen() {
             <Ionicons name="checkmark" size={20} color={colors.background} />
           </TouchableOpacity>
         </View>
+
+        {/* Hareketi Değiştir (Premium) */}
+        <Modal
+          visible={swapModalOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setSwapModalOpen(false)}
+        >
+          <View style={styles.swapOverlay}>
+            <View style={styles.swapBox}>
+              <View style={styles.swapHeader}>
+                <Text style={styles.swapTitle}>Hareketi Değiştir</Text>
+                <TouchableOpacity
+                  onPress={() => setSwapModalOpen(false)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Kapat"
+                >
+                  <Ionicons name="close" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.swapHint}>
+                Aynı kas grubunu çalıştıran alternatiflerden birini seç. Setlerin yeni harekete kaydedilir.
+              </Text>
+              {swapAlternatives.map((alt) => (
+                <TouchableOpacity
+                  key={alt.id}
+                  style={styles.swapOption}
+                  onPress={() => handleSwapExercise(alt)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${alt.name} hareketine geç`}
+                >
+                  <View style={styles.swapOptionIcon}>
+                    <Ionicons name="barbell-outline" size={16} color={colors.accent} />
+                  </View>
+                  <Text style={styles.swapOptionName}>{alt.name}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -551,6 +658,37 @@ const styles = StyleSheet.create({
   exHeader:     { alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
   exerciseName: { ...typography.h2, color: colors.text, textAlign: 'center' },
   muscleGroup:  { ...typography.label, color: colors.textSecondary, letterSpacing: 1 },
+  swapBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    borderWidth: 1, borderColor: colors.accent, borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
+    backgroundColor: colors.accentSoft, marginTop: spacing.xs,
+  },
+  swapBtnLabel: { ...typography.caption, color: colors.accent, fontWeight: '700' },
+
+  swapOverlay: {
+    flex: 1, backgroundColor: colors.overlayStrong,
+    alignItems: 'center', justifyContent: 'center', padding: spacing.lg,
+  },
+  swapBox: {
+    width: '100%', maxWidth: 420,
+    backgroundColor: colors.surface, borderRadius: borderRadius.xl,
+    borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm,
+  },
+  swapHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  swapTitle:  { ...typography.h3, color: colors.text },
+  swapHint:   { ...typography.bodySmall, color: colors.textSecondary, lineHeight: 18 },
+  swapOption: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.surfaceSecondary, borderRadius: borderRadius.md,
+    borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
+  },
+  swapOptionIcon: {
+    width: 30, height: 30, borderRadius: borderRadius.sm,
+    backgroundColor: colors.accentMuted, alignItems: 'center', justifyContent: 'center',
+  },
+  swapOptionName: { ...typography.bodyMedium, color: colors.text, flex: 1 },
 
   setBadgeRow: { flexDirection: 'row', gap: spacing.sm },
 
@@ -623,7 +761,7 @@ const styles = StyleSheet.create({
   skipRestLabel: { ...typography.label, color: colors.background, fontWeight: '800' },
 
   doneContainer: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.xl, padding: spacing.lg,
+    flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.lg,
   },
   doneIcon: {
     width: 120, height: 120, borderRadius: 60,

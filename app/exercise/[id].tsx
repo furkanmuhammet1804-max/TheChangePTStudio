@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import React, { useState } from 'react';
 import {
   ScrollView,
@@ -18,12 +20,122 @@ import {
   EQUIPMENT_LABELS,
   MUSCLE_LABELS,
 } from '@/src/constants/strings';
-import { getExerciseById } from '@/src/data/exercises';
+import { findExerciseById } from '@/src/services/appStore';
+import { getDisplayMediaUrl, getMediaStatus } from '@/src/lib/media';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
+import { Exercise } from '@/src/types';
+import { hapticConfirm } from '@/src/utils/haptics';
+
+/**
+ * Egzersiz medyası — öncelik sırası: video > GIF > görsel.
+ * Hiçbiri yoksa premium görünümlü "Medya hazırlanıyor" placeholder'ı gösterir.
+ */
+function ExerciseMedia({ exercise }: { exercise: Exercise }) {
+  const status = getMediaStatus(exercise);
+  const displayUrl = getDisplayMediaUrl(exercise);
+
+  const player = useVideoPlayer(exercise.videoUrl ?? null, (p) => {
+    p.loop = true;
+    p.muted = true;
+  });
+
+  if (status === 'video_ready' && exercise.videoUrl) {
+    return (
+      <View style={mediaStyles.mediaBox}>
+        <VideoView
+          player={player}
+          style={mediaStyles.mediaImage}
+          contentFit="cover"
+          nativeControls
+        />
+      </View>
+    );
+  }
+
+  if (displayUrl) {
+    return (
+      <View style={mediaStyles.mediaBox}>
+        <Image
+          source={{ uri: displayUrl }}
+          style={mediaStyles.mediaImage}
+          contentFit="cover"
+          transition={200}
+          accessibilityLabel={`${exercise.name} hareket görseli`}
+        />
+        {status === 'gif_ready' && (
+          <View style={mediaStyles.videoBadge}>
+            <Ionicons name="film-outline" size={14} color={colors.accent} />
+            <Text style={mediaStyles.videoBadgeText}>GIF</Text>
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  return (
+    <View style={mediaStyles.placeholder}>
+      <View style={mediaStyles.placeholderIcon}>
+        <Ionicons name="videocam-outline" size={32} color={colors.accent} />
+      </View>
+      <Text style={mediaStyles.placeholderTitle}>Medya hazırlanıyor</Text>
+      <Text style={mediaStyles.placeholderText}>
+        Bu hareketin video ve görselleri yakında eklenecek
+      </Text>
+    </View>
+  );
+}
+
+const mediaStyles = StyleSheet.create({
+  mediaBox: {
+    height: 220,
+    marginHorizontal: spacing.md,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  mediaImage: { flex: 1 },
+  videoBadge: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    right: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.overlayStrong,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+  },
+  videoBadgeText: { ...typography.caption, color: colors.accent },
+  placeholder: {
+    height: 220,
+    backgroundColor: colors.surfaceSecondary,
+    marginHorizontal: spacing.md,
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  placeholderIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  placeholderTitle: { ...typography.h4, color: colors.text },
+  placeholderText: { ...typography.bodySmall, color: colors.textMuted },
+});
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const exercise = getExerciseById(id ?? '');
+  const exercise = findExerciseById(id ?? '');
   const { isFavoriteExercise, toggleFavoriteExercise } = useUser();
   const [activeTab, setActiveTab] = useState<'howto' | 'tips' | 'mistakes'>('howto');
 
@@ -39,7 +151,7 @@ export default function ExerciseDetailScreen() {
   }
 
   const alternatives = exercise.alternatives
-    .map((altId) => getExerciseById(altId))
+    .map((altId) => findExerciseById(altId))
     .filter(Boolean);
 
   const isFav = isFavoriteExercise(exercise.id);
@@ -53,9 +165,15 @@ export default function ExerciseDetailScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.favBtn, isFav && styles.favBtnActive]}
-          onPress={() => toggleFavoriteExercise(exercise.id)}
+          onPress={() => {
+            hapticConfirm();
+            toggleFavoriteExercise(exercise.id);
+          }}
           activeOpacity={0.7}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={isFav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+          accessibilityState={{ selected: isFav }}
         >
           <Ionicons
             name={isFav ? 'heart' : 'heart-outline'}
@@ -71,10 +189,7 @@ export default function ExerciseDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Media: image / GIF / video for proper form */}
-        <View style={styles.videoPlaceholder}>
-          <Ionicons name="videocam-outline" size={56} color={colors.textMuted} />
-          <Text style={styles.videoText}>Görsel / GIF / Video Yakında</Text>
-        </View>
+        <ExerciseMedia exercise={exercise} />
 
         {/* Title & Tags */}
         <View style={styles.header}>
@@ -88,7 +203,12 @@ export default function ExerciseDetailScreen() {
             {exercise.environments.map((env) => (
               <View key={env} style={styles.envChip}>
                 <Ionicons
-                  name={env === 'home' ? 'home-outline' : env === 'gym' ? 'barbell-outline' : 'sunny-outline'}
+                  name={
+                    env === 'home' ? 'home-outline'
+                    : env === 'gym' ? 'barbell-outline'
+                    : env === 'travel' ? 'airplane-outline'
+                    : 'sunny-outline'
+                  }
                   size={12}
                   color={colors.textSecondary}
                 />
@@ -253,19 +373,6 @@ const styles = StyleSheet.create({
   content: { paddingBottom: spacing.xxl, gap: spacing.lg },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   notFoundText: { ...typography.body, color: colors.textSecondary },
-  videoPlaceholder: {
-    height: 220,
-    backgroundColor: colors.surfaceSecondary,
-    marginHorizontal: spacing.md,
-    borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-  },
-  videoText: { ...typography.body, color: colors.textMuted },
   header: { paddingHorizontal: spacing.md, gap: spacing.sm },
   title: { ...typography.h1, color: colors.text },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },

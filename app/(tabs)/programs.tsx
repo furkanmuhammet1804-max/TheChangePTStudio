@@ -14,7 +14,7 @@ import { ProgramCard } from '@/src/components/cards/ProgramCard';
 import { LockedScreen } from '@/src/components/premium/LockedScreen';
 import { useUser } from '@/src/contexts/UserContext';
 import { CATEGORY_LABELS, UPGRADE_MESSAGES } from '@/src/constants/strings';
-import { programs } from '@/src/data/programs';
+import { useAppState } from '@/src/services/appStore';
 import { borderRadius, colors, gradients, shadows, spacing, typography } from '@/src/theme';
 import { ProgramCategory } from '@/src/types';
 
@@ -30,13 +30,26 @@ const CATEGORIES = [
 ] as ProgramCategory[];
 
 export default function ProgramsScreen() {
-  const { isPremium, customProgram, activeProgram } = useUser();
+  const { isPremium, customProgram, activeProgram, assignedProgramIds } = useUser();
   const [activeCategory, setActiveCategory] = useState<ProgramCategory>('all');
+  const managedPrograms = useAppState((s) => s.programs);
+
+  // Mobilde sadece yayında olan programlar listelenir (admin panelle eşzamanlı)
+  const programs = useMemo(
+    () => managedPrograms.filter((m) => m.meta.status === 'published').map((m) => m.program),
+    [managedPrograms],
+  );
+
+  // Admin panelden bu kullanıcıya atanan programlar
+  const assignedPrograms = useMemo(
+    () => programs.filter((p) => assignedProgramIds.includes(p.id)),
+    [programs, assignedProgramIds],
+  );
 
   const filtered = useMemo(() => {
     if (activeCategory === 'all') return programs;
     return programs.filter((p) => p.category === activeCategory);
-  }, [activeCategory]);
+  }, [programs, activeCategory]);
 
   const handleCategory = useCallback((cat: ProgramCategory) => {
     setActiveCategory(cat);
@@ -143,6 +156,19 @@ export default function ProgramsScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Koçun atadığı programlar */}
+        {assignedPrograms.length > 0 && (
+          <View style={styles.assignedSection}>
+            <View style={styles.assignedHeader}>
+              <Ionicons name="ribbon-outline" size={14} color={colors.gold} />
+              <Text style={styles.assignedTitle}>KOÇUNUN SANA ATADIĞI</Text>
+            </View>
+            {assignedPrograms.map((p) => (
+              <ProgramCard key={`assigned_${p.id}`} program={p} />
+            ))}
+          </View>
+        )}
+
         {/* Category Filter */}
         <ScrollView
           horizontal
@@ -232,6 +258,16 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textMuted,
   },
+
+  // Assigned programs
+  assignedSection: { marginTop: spacing.md },
+  assignedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    marginBottom: spacing.xs,
+  },
+  assignedTitle: { ...typography.label, color: colors.gold, letterSpacing: 1 },
 
   // Custom program card
   customWrap: { borderRadius: borderRadius.xl, marginTop: spacing.sm, ...shadows.accent },

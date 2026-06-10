@@ -161,24 +161,14 @@ export default function ProfileScreen() {
             />
           )}
           <SettingsRow
-            icon="notifications-outline"
-            label="Bildirimler"
-            onPress={() => Alert.alert('Yakında', 'Bu özellik yakında gelecek.')}
-          />
-          <SettingsRow
-            icon="shield-outline"
-            label="Gizlilik Politikası"
-            onPress={() => Alert.alert('Gizlilik', 'Gizlilik politikamız hazırlanıyor.')}
+            icon="settings-outline"
+            label="Ayarlar"
+            onPress={() => router.push('/settings')}
           />
           <SettingsRow
             icon="information-circle-outline"
             label="Hakkında"
             onPress={() => Alert.alert('The Change PT Studio', 'Versiyon 1.0.0\nBuilt for your next level.')}
-          />
-          <SettingsRow
-            icon="shield-checkmark-outline"
-            label="Admin Panel (Önizleme)"
-            onPress={() => router.push('/admin')}
           />
           <SettingsRow
             icon="refresh-outline"

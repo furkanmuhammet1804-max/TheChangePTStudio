@@ -24,8 +24,8 @@ import {
   MUSCLE_LABELS,
   UPGRADE_MESSAGES,
 } from '@/src/constants/strings';
-import { exercises } from '@/src/data/exercises';
 import { getWorkoutById, workouts } from '@/src/data/workouts';
+import { useAppState } from '@/src/services/appStore';
 import { borderRadius, colors, gradients, shadows, spacing, typography } from '@/src/theme';
 import { MuscleGroup } from '@/src/types';
 import { randomFrom } from '@/src/utils/formatters';
@@ -48,6 +48,7 @@ const DISCOVER_MUSCLES: { id: MuscleGroup; icon: React.ComponentProps<typeof Ion
 
 function FreeHome() {
   const { profile, favoriteExerciseIds, currentStreak } = useUser();
+  const exercises = useAppState((s) => s.exercises);
 
   const headline  = useMemo(() => randomFrom(HOME_HEADLINES), []);
   const coachNote = useMemo(() => randomFrom(COACH_NOTES), []);

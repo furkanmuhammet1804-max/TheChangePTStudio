@@ -4,7 +4,7 @@ export const exercises: Exercise[] = [
   // GÖĞÜS
   {
     id: 'ex_bench_press',
-    name: 'Halterle Göğüs Presi',
+    name: 'Bench Press',
     muscleGroup: 'chest',
     difficulty: 'intermediate',
     equipment: 'barbell',
@@ -33,7 +33,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_db_press',
-    name: 'Dambılla Göğüs Presi',
+    name: 'Dumbbell Bench Press',
     muscleGroup: 'chest',
     difficulty: 'beginner',
     equipment: 'dumbbells',
@@ -57,7 +57,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_pushup',
-    name: 'Şınav',
+    name: 'Push-Up',
     muscleGroup: 'chest',
     difficulty: 'beginner',
     equipment: 'none',
@@ -78,7 +78,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_cable_fly',
-    name: 'Kabloda Göğüs Açışı',
+    name: 'Cable Fly',
     muscleGroup: 'chest',
     difficulty: 'intermediate',
     equipment: 'cables',
@@ -100,7 +100,7 @@ export const exercises: Exercise[] = [
   // SIRT
   {
     id: 'ex_pullup',
-    name: 'Barfiks',
+    name: 'Pull-Up',
     muscleGroup: 'back',
     difficulty: 'intermediate',
     equipment: 'pull_up_bar',
@@ -125,7 +125,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_lat_pulldown',
-    name: 'Makinede Önden Çekiş',
+    name: 'Lat Pulldown',
     muscleGroup: 'back',
     difficulty: 'beginner',
     equipment: 'machine',
@@ -146,7 +146,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_bent_row',
-    name: 'Halterle Kürek Çekişi',
+    name: 'Barbell Bent-Over Row',
     muscleGroup: 'back',
     difficulty: 'intermediate',
     equipment: 'barbell',
@@ -167,7 +167,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_deadlift',
-    name: 'Ölü Kaldırış',
+    name: 'Deadlift',
     muscleGroup: 'back',
     difficulty: 'advanced',
     equipment: 'barbell',
@@ -193,7 +193,7 @@ export const exercises: Exercise[] = [
   // OMUZ
   {
     id: 'ex_ohp',
-    name: 'Halterle Omuz Presi',
+    name: 'Overhead Press',
     muscleGroup: 'shoulders',
     difficulty: 'intermediate',
     equipment: 'barbell',
@@ -214,7 +214,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_lateral_raise',
-    name: 'Dambılla Yana Açış',
+    name: 'Lateral Raise',
     muscleGroup: 'shoulders',
     difficulty: 'beginner',
     equipment: 'dumbbells',
@@ -236,7 +236,7 @@ export const exercises: Exercise[] = [
   // KOL
   {
     id: 'ex_bicep_curl',
-    name: 'Dambılla Biceps Bükme',
+    name: 'Dumbbell Biceps Curl',
     muscleGroup: 'biceps',
     difficulty: 'beginner',
     equipment: 'dumbbells',
@@ -257,7 +257,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_tricep_pushdown',
-    name: 'Kabloda Triceps İtiş',
+    name: 'Triceps Pushdown',
     muscleGroup: 'triceps',
     difficulty: 'beginner',
     equipment: 'cables',
@@ -278,7 +278,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_dips',
-    name: 'Triceps Bar İtişi',
+    name: 'Dips',
     muscleGroup: 'triceps',
     difficulty: 'intermediate',
     equipment: 'none',
@@ -299,7 +299,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_hammer_curl',
-    name: 'Çekiç Bükme',
+    name: 'Hammer Curl',
     muscleGroup: 'biceps',
     difficulty: 'beginner',
     equipment: 'dumbbells',
@@ -320,7 +320,7 @@ export const exercises: Exercise[] = [
   // BACAK
   {
     id: 'ex_squat',
-    name: 'Halterle Çömelme',
+    name: 'Barbell Squat',
     muscleGroup: 'legs',
     difficulty: 'intermediate',
     equipment: 'barbell',
@@ -343,7 +343,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_lunges',
-    name: 'Öne Hamle',
+    name: 'Lunge',
     muscleGroup: 'legs',
     difficulty: 'beginner',
     equipment: 'none',
@@ -364,7 +364,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_rdl',
-    name: 'Romen Ölü Kaldırış',
+    name: 'Romanian Deadlift',
     muscleGroup: 'legs',
     difficulty: 'intermediate',
     equipment: 'barbell',
@@ -388,7 +388,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_leg_press',
-    name: 'Makinede Bacak Presi',
+    name: 'Leg Press',
     muscleGroup: 'legs',
     difficulty: 'beginner',
     equipment: 'machine',
@@ -431,7 +431,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_crunch',
-    name: 'Karın Mekiği',
+    name: 'Crunch',
     muscleGroup: 'core',
     difficulty: 'beginner',
     equipment: 'none',
@@ -452,7 +452,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_russian_twist',
-    name: 'Oturarak Gövde Dönüşü',
+    name: 'Russian Twist',
     muscleGroup: 'core',
     difficulty: 'intermediate',
     equipment: 'none',
@@ -472,7 +472,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_leg_raise',
-    name: 'Bacak Kaldırma',
+    name: 'Leg Raise',
     muscleGroup: 'core',
     difficulty: 'intermediate',
     equipment: 'none',
@@ -492,7 +492,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_mountain_climber',
-    name: 'Dağcı',
+    name: 'Mountain Climber',
     muscleGroup: 'core',
     difficulty: 'intermediate',
     equipment: 'none',
@@ -535,7 +535,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_jumping_jack',
-    name: 'Yıldız Sıçrama',
+    name: 'Jumping Jack',
     muscleGroup: 'cardio',
     difficulty: 'beginner',
     equipment: 'none',
@@ -556,7 +556,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_high_knees',
-    name: 'Yüksek Diz Koşusu',
+    name: 'High Knees',
     muscleGroup: 'cardio',
     difficulty: 'beginner',
     equipment: 'none',
@@ -578,7 +578,7 @@ export const exercises: Exercise[] = [
   // MOBİLİTE
   {
     id: 'ex_hip_flexor_stretch',
-    name: 'Kalça Esnetme',
+    name: 'Hip Flexor Stretch',
     muscleGroup: 'mobility',
     difficulty: 'beginner',
     equipment: 'none',
@@ -599,7 +599,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_shoulder_mobility',
-    name: 'Omuz Çevirme',
+    name: 'Shoulder Circles',
     muscleGroup: 'mobility',
     difficulty: 'beginner',
     equipment: 'none',
@@ -621,7 +621,7 @@ export const exercises: Exercise[] = [
   // KALÇA
   {
     id: 'ex_glute_bridge',
-    name: 'Kalça Köprüsü',
+    name: 'Glute Bridge',
     muscleGroup: 'glutes',
     difficulty: 'beginner',
     equipment: 'none',
@@ -642,7 +642,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_hip_thrust',
-    name: 'Halterle Kalça İtişi',
+    name: 'Barbell Hip Thrust',
     muscleGroup: 'glutes',
     difficulty: 'intermediate',
     equipment: 'barbell',
@@ -663,7 +663,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_band_kickback',
-    name: 'Bantla Kalça İtişi',
+    name: 'Banded Glute Kickback',
     muscleGroup: 'glutes',
     difficulty: 'beginner',
     equipment: 'resistance_bands',
@@ -685,7 +685,7 @@ export const exercises: Exercise[] = [
   // KETTLEBELL / TRX / BANT
   {
     id: 'ex_kb_swing',
-    name: 'Kettlebell Sallama',
+    name: 'Kettlebell Swing',
     muscleGroup: 'glutes',
     difficulty: 'intermediate',
     equipment: 'kettlebell',
@@ -706,7 +706,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_trx_row',
-    name: 'TRX Kürek Çekişi',
+    name: 'TRX Row',
     muscleGroup: 'back',
     difficulty: 'beginner',
     equipment: 'trx',
@@ -727,7 +727,7 @@ export const exercises: Exercise[] = [
   },
   {
     id: 'ex_band_pull_apart',
-    name: 'Bant Açma',
+    name: 'Band Pull-Apart',
     muscleGroup: 'shoulders',
     difficulty: 'beginner',
     equipment: 'resistance_bands',

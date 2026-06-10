@@ -15,7 +15,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { notify } from '@/src/utils/notify';
+import { isAdminApp } from '@/src/lib/appVariant';
+import { logoutAdmin } from '@/src/services/adminAuth';
+import { useAppState } from '@/src/services/appStore';
 import { borderRadius, colors, spacing, typography } from '@/src/theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -113,15 +115,17 @@ function Sidebar({ pathname }: { pathname: string }) {
 
       {/* Footer */}
       <View style={styles.sidebarFooter}>
-        <TouchableOpacity
-          style={styles.backToApp}
-          onPress={() => router.replace('/(tabs)')}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="phone-portrait-outline" size={16} color={colors.textSecondary} />
-          <Text style={styles.backToAppLabel}>Uygulamaya Dön</Text>
-        </TouchableOpacity>
-        <Text style={styles.versionText}>Admin Panel v1.0 · Önizleme</Text>
+        {!isAdminApp && (
+          <TouchableOpacity
+            style={styles.backToApp}
+            onPress={() => router.replace('/(tabs)')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="phone-portrait-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.backToAppLabel}>Uygulamaya Dön</Text>
+          </TouchableOpacity>
+        )}
+        <Text style={styles.versionText}>Admin Panel v1.0</Text>
       </View>
     </View>
   );
@@ -130,30 +134,30 @@ function Sidebar({ pathname }: { pathname: string }) {
 // ─── Top bar ─────────────────────────────────────────────────────────────────
 
 function TopBar({ showBrand }: { showBrand: boolean }) {
-  const handleLogout = () => {
-    notify('Çıkış Yap', 'Oturum yönetimi backend ile birlikte aktifleşecek.');
-  };
+  const settings = useAppState((s) => s.settings);
 
   return (
     <View style={styles.topBar}>
       <Text style={styles.topBarTitle} numberOfLines={1}>
-        {showBrand ? 'The Change PT Studio · Admin' : 'The Change PT Studio Admin'}
+        {showBrand ? `${settings.companyName} · Admin` : `${settings.companyName} Admin`}
       </Text>
 
       <View style={styles.topBarRight}>
         <View style={styles.adminUser}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>F</Text>
+            <Text style={styles.avatarText}>
+              {settings.companyName.charAt(0).toUpperCase()}
+            </Text>
           </View>
           {!showBrand && (
             <View>
-              <Text style={styles.adminName}>Firma Sahibi</Text>
+              <Text style={styles.adminName}>{settings.adminEmail}</Text>
               <Text style={styles.adminRole}>Yönetici</Text>
             </View>
           )}
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={() => logoutAdmin()} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={16} color={colors.textSecondary} />
           {!showBrand && <Text style={styles.logoutLabel}>Çıkış Yap</Text>}
         </TouchableOpacity>

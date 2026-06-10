@@ -27,6 +27,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Egzersiz medyası eklemek için fotoğraf galerinize erişim gerekiyor."
+        }
+      ],
       [
         "expo-splash-screen",
         {

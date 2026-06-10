@@ -26,7 +26,10 @@ export type Equipment =
   | 'mixed';
 
 /** Where an exercise can be performed */
-export type Environment = 'home' | 'gym' | 'outdoor';
+export type Environment = 'home' | 'gym' | 'outdoor' | 'travel';
+
+/** Egzersiz medya hazırlık durumu — admin panelden yüklenen içeriğe göre türetilir */
+export type MediaStatus = 'missing' | 'image_ready' | 'gif_ready' | 'video_ready';
 
 /** Membership tier — gates program & progress features */
 export type MembershipTier = 'free' | 'premium';
@@ -72,6 +75,9 @@ export interface Exercise {
   imageUrl?: string;
   gifUrl?: string;
   videoUrl?: string;
+  thumbnailUrl?: string;
+  /** Açıkça belirtilmezse URL alanlarından türetilir (bkz. src/lib/media.ts) */
+  mediaStatus?: MediaStatus;
 }
 
 export interface WorkoutExercise {
@@ -178,6 +184,32 @@ export interface ActiveProgram {
   startedAt: string;           // ISO timestamp
   completedSessions: string[]; // "W{week}D{day}" keys of done sessions
   completedAt?: string;        // ISO timestamp — set when all sessions are done
+}
+
+// ─── Transformation (önce/sonra) ────────────────────────────────────────────
+
+/** Önce/sonra fotoğrafı — upload backend'i bağlandığında uri uzak URL olur */
+export interface TransformationPhoto {
+  id: string;
+  type: 'before' | 'after';
+  uri: string;
+  takenAt: string; // ISO timestamp
+}
+
+// ─── Bildirim tercihleri ────────────────────────────────────────────────────
+
+/** Yerel bildirim türleri — push backend bağlandığında aynı anahtarlar kullanılır */
+export type NotificationKind =
+  | 'workout_reminder'
+  | 'premium_renewal'
+  | 'new_program'
+  | 'motivation'
+  | 'admin_announcement';
+
+export interface NotificationPreferences {
+  workoutReminders: boolean;
+  motivation: boolean;
+  productNews: boolean; // yeni program + admin duyuruları
 }
 
 // ─── Legacy (kept for migration compat) ────────────────────────────────────

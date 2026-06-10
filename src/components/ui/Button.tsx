@@ -10,6 +10,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { borderRadius, colors, gradients, shadows, spacing, typography } from '@/src/theme';
+import { hapticTap } from '@/src/utils/haptics';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -33,10 +34,16 @@ export function Button({
   fullWidth = false,
   style,
   disabled,
+  onPress,
   ...rest
 }: ButtonProps) {
   const isGradient = variant === 'primary' || variant === 'gold';
   const isDisabled = disabled || loading;
+
+  const handlePress: TouchableOpacityProps['onPress'] = (e) => {
+    hapticTap();
+    onPress?.(e);
+  };
 
   const content = loading ? (
     <ActivityIndicator
@@ -53,6 +60,10 @@ export function Button({
     <TouchableOpacity
       activeOpacity={0.85}
       disabled={isDisabled}
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: !!isDisabled, busy: loading }}
       style={[
         styles.base,
         styles[`size_${size}`],

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -8,11 +8,18 @@ import {
   View,
 } from 'react-native';
 import { useUser } from '@/src/contexts/UserContext';
+import { isAdminApp } from '@/src/lib/appVariant';
 import { colors, spacing, typography } from '@/src/theme';
 
 const { width } = Dimensions.get('window');
 
 export default function SplashAnimationScreen() {
+  // Admin varyantı doğrudan yönetim paneline açılır (müşteri akışı yok)
+  if (isAdminApp) return <Redirect href="/admin" />;
+  return <CustomerSplash />;
+}
+
+function CustomerSplash() {
   const { isOnboardingComplete, loading } = useUser();
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.88)).current;
@@ -52,7 +59,7 @@ export default function SplashAnimationScreen() {
     }, 2400);
 
     return () => clearTimeout(timeout);
-  }, [loading, isOnboardingComplete]);
+  }, [loading, isOnboardingComplete, opacity, scale, taglineOpacity]);
 
   return (
     <View style={styles.container}>

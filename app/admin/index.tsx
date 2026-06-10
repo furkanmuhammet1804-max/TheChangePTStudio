@@ -1,42 +1,94 @@
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { DataTable, TableColumn } from '@/src/components/admin/DataTable';
 import { AdminButton, AdminCard, PageHeader, StatCard, StatusBadge } from '@/src/components/admin/ui';
-import { GOAL_LABELS } from '@/src/constants/strings';
-import { AdminUserRow, DASHBOARD_STATS, MOCK_USERS, TIER_LABELS } from '@/src/data/adminMock';
+import { GOAL_LABELS, TIER_LABELS } from '@/src/constants/strings';
+import { computeDashboardStats, getUserTier, useAppState } from '@/src/services/appStore';
 import { colors, spacing, typography } from '@/src/theme';
+import { AdminUserTier, Subscription, UserAccount } from '@/src/types/admin';
+import { formatRelativeTime, formatShortDate } from '@/src/utils/formatters';
 
-const TIER_TONES = { free: 'muted', premium: 'gold', expired: 'warning' } as const;
+const TIER_TONES: Record<AdminUserTier, 'muted' | 'gold' | 'warning'> = {
+  free: 'muted',
+  premium: 'gold',
+  expired: 'warning',
+};
 
-const RECENT_COLUMNS: TableColumn<AdminUserRow>[] = [
-  { key: 'name',  title: 'Ad Soyad', width: 150, flex: 2, value: (u) => u.name },
-  { key: 'tier',  title: 'Üyelik',   width: 130, render: (u) => <StatusBadge label={TIER_LABELS[u.tier]} tone={TIER_TONES[u.tier]} /> },
-  { key: 'goal',  title: 'Hedef',    width: 130, value: (u) => GOAL_LABELS[u.goal] },
-  { key: 'login', title: 'Son Giriş', width: 110, value: (u) => u.lastLogin },
-];
+function buildColumns(subscriptions: Subscription[], dateColumn: 'createdAt' | 'lastActiveAt'): TableColumn<UserAccount>[] {
+  return [
+    { key: 'name', title: 'Ad Soyad', width: 150, flex: 2, value: (u) => u.profile.name },
+    {
+      key: 'tier', title: 'Üyelik', width: 130,
+      render: (u) => {
+        const tier = getUserTier(u, subscriptions);
+        return <StatusBadge label={TIER_LABELS[tier]} tone={TIER_TONES[tier]} />;
+      },
+    },
+    { key: 'goal', title: 'Hedef', width: 130, value: (u) => GOAL_LABELS[u.profile.goal] },
+    {
+      key: dateColumn,
+      title: dateColumn === 'createdAt' ? 'Kayıt' : 'Son Aktif',
+      width: 120,
+      value: (u) =>
+        dateColumn === 'createdAt'
+          ? formatShortDate(u.createdAt)
+          : formatRelativeTime(u.lastActiveAt),
+    },
+  ];
+}
 
 export default function AdminDashboardScreen() {
+  const state = useAppState((s) => s);
+
+  const stats = useMemo(() => computeDashboardStats(state), [state]);
+
+  const recentSignups = useMemo(
+    () => [...state.users].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5),
+    [state.users],
+  );
+  const recentActive = useMemo(
+    () =>
+      [...state.users]
+        .filter((u) => !!u.lastActiveAt)
+        .sort((a, b) => (b.lastActiveAt ?? '').localeCompare(a.lastActiveAt ?? ''))
+        .slice(0, 5),
+    [state.users],
+  );
+
+  const signupColumns = useMemo(
+    () => buildColumns(state.subscriptions, 'createdAt'),
+    [state.subscriptions],
+  );
+  const activeColumns = useMemo(
+    () => buildColumns(state.subscriptions, 'lastActiveAt'),
+    [state.subscriptions],
+  );
+
   return (
     <>
-      <PageHeader
-        title="Dashboard"
-        subtitle="The Change PT Studio genel görünüm"
-      />
+      <PageHeader title="Dashboard" subtitle={`${state.settings.companyName} genel görünüm`} />
 
-      {/* Stat cards */}
+      {/* Üyelik istatistikleri */}
       <View style={styles.statsRow}>
-        <StatCard icon="people"        label="Toplam Kullanıcı" value={DASHBOARD_STATS.totalUsers}     trend={DASHBOARD_STATS.trends.totalUsers} />
-        <StatCard icon="star"          label="Premium Üye"      value={DASHBOARD_STATS.premiumUsers}   trend={DASHBOARD_STATS.trends.premiumUsers} tone="gold" />
-        <StatCard icon="albums"        label="Aktif Program"    value={DASHBOARD_STATS.activePrograms} trend={DASHBOARD_STATS.trends.activePrograms} />
-        <StatCard icon="cash"          label="Aylık Gelir"      value={DASHBOARD_STATS.monthlyRevenue} trend={DASHBOARD_STATS.trends.monthlyRevenue} tone="gold" />
+        <StatCard icon="people"  label="Toplam Kullanıcı"     value={String(stats.totalUsers)} />
+        <StatCard icon="star"    label="Premium Üye"          value={String(stats.premiumUsers)} tone="gold" />
+        <StatCard icon="person"  label="Ücretsiz Üye"         value={String(stats.freeUsers)} />
+        <StatCard icon="time"    label="Süresi Dolan Üyelik"  value={String(stats.expiredUsers)} />
       </View>
 
-      {/* Two-column area */}
+      {/* İçerik istatistikleri */}
+      <View style={styles.statsRow}>
+        <StatCard icon="albums"           label="Aktif Program"          value={String(stats.publishedPrograms)} trend={`${stats.totalPrograms} toplam`} />
+        <StatCard icon="barbell"          label="Egzersiz"               value={String(stats.totalExercises)} />
+        <StatCard icon="checkmark-circle" label="Tamamlanan Antrenman"   value={String(stats.workoutsCompletedTotal)} tone="gold" />
+      </View>
+
+      {/* Tablolar */}
       <View style={styles.columns}>
         <AdminCard
-          title="Son Aktif Kullanıcılar"
-          subtitle="Bugün giriş yapan ve son kayıt olan üyeler"
+          title="Son Kayıt Olan Kullanıcılar"
+          subtitle="En yeni üyelikler"
           style={styles.tableCard}
           actions={
             <AdminButton
@@ -48,27 +100,56 @@ export default function AdminDashboardScreen() {
             />
           }
         >
-          <DataTable
-            columns={RECENT_COLUMNS}
-            data={MOCK_USERS.slice(0, 5)}
-            keyExtractor={(u) => u.id}
-          />
+          <DataTable columns={signupColumns} data={recentSignups} keyExtractor={(u) => u.id} />
         </AdminCard>
 
+        <AdminCard
+          title="Son Aktif Kullanıcılar"
+          subtitle="Uygulamayı en son kullananlar"
+          style={styles.tableCard}
+        >
+          <DataTable columns={activeColumns} data={recentActive} keyExtractor={(u) => u.id} />
+        </AdminCard>
+      </View>
+
+      {/* Hızlı işlemler + sistem durumu */}
+      <View style={styles.columns}>
         <AdminCard title="Hızlı İşlemler" subtitle="Sık kullanılan yönetim aksiyonları" style={styles.quickCard}>
           <View style={styles.quickList}>
-            <AdminButton label="Yeni Program Oluştur" icon="add-circle-outline"     variant="primary" onPress={() => router.push('/admin/programs')} />
-            <AdminButton label="Yeni Egzersiz Ekle"   icon="barbell-outline"        variant="outline" onPress={() => router.push('/admin/exercises')} />
-            <AdminButton label="Bildirim Gönder"      icon="notifications-outline"  variant="outline" onPress={() => router.push('/admin/notifications')} />
-            <AdminButton label="Üyelikleri Yönet"     icon="star-outline"           variant="ghost"   onPress={() => router.push('/admin/memberships')} />
+            <AdminButton label="Yeni Program Oluştur" icon="add-circle-outline"    variant="primary" onPress={() => router.push('/admin/programs')} />
+            <AdminButton label="Yeni Egzersiz Ekle"   icon="barbell-outline"       variant="outline" onPress={() => router.push('/admin/exercises')} />
+            <AdminButton label="Bildirim Gönder"      icon="notifications-outline" variant="outline" onPress={() => router.push('/admin/notifications')} />
+            <AdminButton label="Üyelikleri Yönet"     icon="star-outline"          variant="ghost"   onPress={() => router.push('/admin/memberships')} />
           </View>
+        </AdminCard>
 
+        <AdminCard title="Sistem Durumu" subtitle="Servis ve içerik özeti" style={styles.quickCard}>
           <View style={styles.systemBox}>
-            <Text style={styles.systemTitle}>Sistem Durumu</Text>
-            <SystemRow label="Uygulama"        value="Çalışıyor" ok />
-            <SystemRow label="İçerik Kataloğu" value="34 egzersiz · 5 program" ok />
-            <SystemRow label="Ödeme Sistemi"   value="Kurulum bekliyor" />
-            <SystemRow label="Push Bildirim"   value="Kurulum bekliyor" />
+            <SystemRow label="Uygulama" value={`v${state.settings.appVersion} · Çalışıyor`} ok />
+            <SystemRow
+              label="İçerik Kataloğu"
+              value={`${stats.totalExercises} egzersiz · ${stats.totalPrograms} program`}
+              ok
+            />
+            <SystemRow
+              label="İçerik Senkronu"
+              value={
+                state.settings.lastContentSyncAt
+                  ? `Son değişiklik ${formatRelativeTime(state.settings.lastContentSyncAt)}`
+                  : 'Değişiklik yok'
+              }
+              ok
+            />
+            <SystemRow
+              label="Ödeme Sistemi"
+              value={state.settings.paymentsEnabled ? 'Bağlı' : 'Kurulum bekliyor'}
+              ok={state.settings.paymentsEnabled}
+            />
+            <SystemRow
+              label="Push Bildirim"
+              value={state.settings.pushEnabled ? 'Bağlı' : 'Kurulum bekliyor'}
+              ok={state.settings.pushEnabled}
+            />
           </View>
         </AdminCard>
       </View>
@@ -89,16 +170,10 @@ function SystemRow({ label, value, ok }: { label: string; value: string; ok?: bo
 const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   columns: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, alignItems: 'flex-start' },
-  tableCard: { flex: 2, minWidth: 320 },
-  quickCard: { flex: 1, minWidth: 260 },
+  tableCard: { flex: 1, minWidth: 320 },
+  quickCard: { flex: 1, minWidth: 280 },
   quickList: { gap: spacing.sm },
-  systemBox: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
-    gap: spacing.sm,
-  },
-  systemTitle: { ...typography.label, color: colors.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
+  systemBox: { gap: spacing.sm },
   systemRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   systemDot: { width: 7, height: 7, borderRadius: 4 },
   systemLabel: { ...typography.bodySmall, color: colors.text, flex: 1 },

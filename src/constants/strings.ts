@@ -62,6 +62,14 @@ export const ENVIRONMENT_LABELS: Record<string, string> = {
   home: 'Evde',
   gym: 'Salonda',
   outdoor: 'Dış Mekanda',
+  travel: 'Seyahatte',
+};
+
+export const MEDIA_STATUS_LABELS: Record<string, string> = {
+  missing: 'Medya Eksik',
+  image_ready: 'Görsel Hazır',
+  gif_ready: 'GIF Hazır',
+  video_ready: 'Video Hazır',
 };
 
 export const LOCATION_LABELS: Record<string, string> = {
@@ -138,12 +146,47 @@ export const QUICK_ACCESS = [
   { id: 'home', label: 'Evde', icon: 'home' as const },
 ];
 
+// ─── Admin panel etiketleri ─────────────────────────────────────────────────
+
+export const TIER_LABELS: Record<string, string> = {
+  free: 'Ücretsiz',
+  premium: 'Premium',
+  expired: 'Süresi Dolmuş',
+};
+
+export const AUDIENCE_LABELS: Record<string, string> = {
+  all: 'Tüm Kullanıcılar',
+  premium: 'Premium Kullanıcılar',
+  free: 'Ücretsiz Kullanıcılar',
+};
+
+export const CONTENT_STATUS_LABELS: Record<string, string> = {
+  published: 'Yayında',
+  draft: 'Taslak',
+  archived: 'Arşivde',
+};
+
+export const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+  active: 'Aktif',
+  expired: 'Süresi Doldu',
+  cancelled: 'İptal Edildi',
+  trial: 'Deneme',
+};
+
+export const GENDER_LABELS: Record<string, string> = {
+  male: 'Erkek',
+  female: 'Kadın',
+  other: 'Diğer',
+};
+
 // ─── Premium ────────────────────────────────────────────────────────────────
 
 export const PREMIUM_CTA = "Premium'u Keşfet";
 
 // Nazik yükseltme mesajları — özellik bazlı
 export const UPGRADE_MESSAGES = {
+  generic:
+    'Premium ile sana özel programlara, ilerleme takibine ve koç deneyimine ulaşabilirsin.',
   program:
     'Premium ile sana özel program oluşturabilir ve gelişimini takip edebilirsin.',
   todayWorkout:
