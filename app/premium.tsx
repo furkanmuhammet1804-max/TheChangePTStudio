@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -10,16 +10,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUser } from '@/src/contexts/UserContext';
+import { PREMIUM_BENEFITS } from '@/src/constants/strings';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
-
-const FEATURES = [
-  { icon: 'person-outline', label: 'Kişiye Özel Program', desc: 'Sana özel hazırlanmış antrenman planı' },
-  { icon: 'headset-outline', label: 'PT Koç Kontrolü', desc: 'Haftalık PT geri bildirimi ve takip' },
-  { icon: 'restaurant-outline', label: 'Beslenme Planı', desc: 'Hedefe uygun kişisel beslenme tablosu' },
-  { icon: 'bar-chart-outline', label: 'Haftalık Rapor', desc: 'Detaylı ilerleme analizi ve öneriler' },
-  { icon: 'videocam-outline', label: 'Form Analizi', desc: 'Video üzerinden hareket analizi' },
-  { icon: 'play-circle-outline', label: 'Özel Video İçerikler', desc: '200+ premium video antrenman' },
-];
 
 const PLANS = [
   { id: 'monthly', label: 'Aylık', price: '₺299', period: '/ay', popular: false },
@@ -28,11 +21,24 @@ const PLANS = [
 ];
 
 export default function PremiumScreen() {
-  const handlePurchase = (planId: string) => {
+  const { isPremium, setMembership } = useUser();
+  const [selectedPlan, setSelectedPlan] = useState('quarterly');
+
+  const handlePurchase = () => {
+    // Ödeme altyapısı henüz hazır değil — şimdilik önizleme olarak premium açılır
     Alert.alert(
-      'Yakında!',
-      'Ödeme sistemi hazırlanıyor. Çok yakında açılacak!',
-      [{ text: 'Tamam' }],
+      'Ödeme sistemi hazırlanıyor',
+      'Çok yakında! Şimdilik Premium deneyimini ücretsiz önizleme olarak açabilirsin.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Önizlemeyi Aç',
+          onPress: async () => {
+            await setMembership('premium');
+            router.back();
+          },
+        },
+      ],
     );
   };
 
@@ -47,27 +53,42 @@ export default function PremiumScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* Header — value first, no pressure */}
         <View style={styles.hero}>
           <View style={styles.goldBadge}>
             <Ionicons name="star" size={16} color={colors.background} />
             <Text style={styles.goldBadgeText}>PREMIUM</Text>
           </View>
-          <Text style={styles.title}>Bir Sonraki{'\n'}Seviyene Çık</Text>
+          <Text style={styles.title}>Ne Yapacağını{'\n'}Bilen Kişi Ol</Text>
           <Text style={styles.subtitle}>
-            Kişisel antrenörün artık cebinde. Premium ile hedeflerine en hızlı yolu al.
+            Hareketleri zaten öğreniyorsun. Premium ile artık her gün ne yapacağını bilir, gelişimini adım adım görürsün.
           </Text>
         </View>
 
-        {/* Features */}
+        {/* Already premium */}
+        {isPremium && (
+          <View style={styles.alreadyCard}>
+            <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+            <Text style={styles.alreadyText}>Premium üyeliğin aktif. İyi antrenmanlar!</Text>
+          </View>
+        )}
+
+        {/* Benefit cards */}
         <View style={styles.featuresList}>
-          {FEATURES.map((f) => (
+          {PREMIUM_BENEFITS.map((f) => (
             <View key={f.label} style={styles.featureRow}>
               <View style={styles.featureIcon}>
-                <Ionicons name={f.icon as React.ComponentProps<typeof Ionicons>['name']} size={22} color={colors.gold} />
+                <Ionicons name={f.icon} size={22} color={colors.gold} />
               </View>
               <View style={styles.featureInfo}>
-                <Text style={styles.featureLabel}>{f.label}</Text>
+                <View style={styles.featureLabelRow}>
+                  <Text style={styles.featureLabel}>{f.label}</Text>
+                  {f.comingSoon && (
+                    <View style={styles.soonBadge}>
+                      <Text style={styles.soonBadgeText}>YAKINDA</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={styles.featureDesc}>{f.desc}</Text>
               </View>
             </View>
@@ -75,42 +96,49 @@ export default function PremiumScreen() {
         </View>
 
         {/* Plans */}
-        <Text style={styles.plansTitle}>Plan Seç</Text>
-        <View style={styles.plansRow}>
-          {PLANS.map((plan) => (
+        {!isPremium && (
+          <>
+            <Text style={styles.plansTitle}>Plan Seç</Text>
+            <View style={styles.plansRow}>
+              {PLANS.map((plan) => {
+                const selected = selectedPlan === plan.id;
+                return (
+                  <TouchableOpacity
+                    key={plan.id}
+                    style={[styles.planCard, selected && styles.planCardSelected]}
+                    onPress={() => setSelectedPlan(plan.id)}
+                    activeOpacity={0.85}
+                  >
+                    {plan.popular && (
+                      <View style={styles.planBadge}>
+                        <Text style={styles.planBadgeText}>{plan.badge}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.planLabel}>{plan.label}</Text>
+                    <Text style={[styles.planPrice, selected && styles.planPriceSelected]}>
+                      {plan.price}
+                    </Text>
+                    <Text style={styles.planPeriod}>{plan.period}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* CTA */}
             <TouchableOpacity
-              key={plan.id}
-              style={[styles.planCard, plan.popular && styles.planCardPopular]}
-              onPress={() => handlePurchase(plan.id)}
+              style={styles.ctaBtn}
+              onPress={handlePurchase}
               activeOpacity={0.85}
             >
-              {plan.popular && (
-                <View style={styles.planBadge}>
-                  <Text style={styles.planBadgeText}>{plan.badge}</Text>
-                </View>
-              )}
-              <Text style={styles.planLabel}>{plan.label}</Text>
-              <Text style={[styles.planPrice, plan.popular && styles.planPricePopular]}>
-                {plan.price}
-              </Text>
-              <Text style={styles.planPeriod}>{plan.period}</Text>
+              <Ionicons name="star" size={18} color={colors.background} />
+              <Text style={styles.ctaLabel}>PREMIUM&apos;U BAŞLAT</Text>
             </TouchableOpacity>
-          ))}
-        </View>
 
-        {/* CTA */}
-        <TouchableOpacity
-          style={styles.ctaBtn}
-          onPress={() => handlePurchase('quarterly')}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="star" size={18} color={colors.background} />
-          <Text style={styles.ctaLabel}>PREMIUM'A GEÇ</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.disclaimer}>
-          İstediğin zaman iptal edebilirsin. Gizlilik politikamız geçerlidir.
-        </Text>
+            <Text style={styles.disclaimer}>
+              İstediğin zaman iptal edebilirsin. Önce değer gör, sonra karar ver.
+            </Text>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -137,9 +165,10 @@ const styles = StyleSheet.create({
   goldBadgeText: { ...typography.label, color: colors.background, fontWeight: '800' },
   title: {
     ...typography.hero,
+    fontSize: 38,
     color: colors.text,
     textAlign: 'center',
-    lineHeight: 50,
+    lineHeight: 44,
   },
   subtitle: {
     ...typography.body,
@@ -148,6 +177,17 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     paddingHorizontal: spacing.md,
   },
+  alreadyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(76,175,80,0.1)',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(76,175,80,0.3)',
+  },
+  alreadyText: { ...typography.bodyMedium, color: colors.text, flex: 1 },
   featuresList: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
@@ -172,8 +212,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   featureInfo: { flex: 1 },
+  featureLabelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   featureLabel: { ...typography.bodyMedium, color: colors.text },
   featureDesc: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
+  soonBadge: {
+    backgroundColor: colors.goldMuted,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  soonBadgeText: { ...typography.caption, color: colors.gold, fontWeight: '800', fontSize: 9 },
   plansTitle: { ...typography.h3, color: colors.text },
   plansRow: { flexDirection: 'row', gap: spacing.sm },
   planCard: {
@@ -183,12 +231,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: 'center',
     gap: spacing.xs,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     paddingTop: spacing.xl,
     ...shadows.sm,
   },
-  planCardPopular: {
+  planCardSelected: {
     borderColor: colors.gold,
     backgroundColor: colors.goldMuted,
   },
@@ -203,7 +251,7 @@ const styles = StyleSheet.create({
   planBadgeText: { ...typography.caption, color: colors.background, fontWeight: '800' },
   planLabel: { ...typography.label, color: colors.textSecondary },
   planPrice: { ...typography.h3, color: colors.text },
-  planPricePopular: { color: colors.gold },
+  planPriceSelected: { color: colors.gold },
   planPeriod: { ...typography.caption, color: colors.textMuted },
   ctaBtn: {
     flexDirection: 'row',

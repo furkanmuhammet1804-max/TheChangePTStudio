@@ -7,8 +7,10 @@ export const colors = {
   accent: '#C5F135',
   accentDark: '#9ABC28',
   accentMuted: 'rgba(197, 241, 53, 0.15)',
+  accentSoft: 'rgba(197, 241, 53, 0.08)',
 
   gold: '#D4A843',
+  goldLight: '#E4C16B',
   goldMuted: 'rgba(212, 168, 67, 0.15)',
 
   text: '#FFFFFF',
@@ -142,4 +144,22 @@ export const shadows = {
     shadowRadius: 12,
     elevation: 8,
   },
+} as const;
+
+/**
+ * Reusable gradient color tuples for <LinearGradient>.
+ * Use as: colors={gradients.accent} (typed as readonly string[]).
+ */
+export const gradients = {
+  accent: ['#D4FF4F', '#C5F135', '#9ABC28'] as const,
+  gold: ['#E4C16B', '#D4A843'] as const,
+  // Subtle dark card sheen — top slightly lifted, bottom into background
+  surface: ['#222222', '#161616'] as const,
+  surfaceRaised: ['#272727', '#1A1A1A'] as const,
+  // Hero / illustration backdrops
+  heroDark: ['#1F1F1F', '#101010'] as const,
+  // Per-onboarding-slide accent glows
+  slideLime: ['rgba(197,241,53,0.22)', 'rgba(197,241,53,0.02)'] as const,
+  slideGold: ['rgba(212,168,67,0.22)', 'rgba(212,168,67,0.02)'] as const,
+  slideBlue: ['rgba(79,195,247,0.22)', 'rgba(79,195,247,0.02)'] as const,
 } as const;

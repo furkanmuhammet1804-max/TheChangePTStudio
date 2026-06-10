@@ -9,7 +9,8 @@ import React, {
 } from 'react';
 import {
   ActiveProgram,
-  ExerciseLog,
+  MembershipTier,
+  Program,
   ProgressData,
   SetLog,
   UserProfile,
@@ -24,6 +25,9 @@ const ONBOARDING_KEY   = '@tcp_onboarding_done';
 const PROGRESS_KEY     = '@tcp_progress';
 const ACTIVE_PROG_KEY  = '@tcp_active_program';
 const WORKOUT_LOGS_KEY = '@tcp_workout_logs';
+const MEMBERSHIP_KEY   = '@tcp_membership';
+const FAVORITES_KEY    = '@tcp_favorite_exercises';
+const CUSTOM_PROG_KEY  = '@tcp_custom_program';
 
 // ─── Context shape ─────────────────────────────────────────────────────────
 interface UserContextType {
@@ -33,6 +37,22 @@ interface UserContextType {
   loading:              boolean;
   saveProfile:          (p: UserProfile)   => Promise<void>;
   completeOnboarding:   ()                 => Promise<void>;
+
+  // Membership
+  membership:    MembershipTier;
+  isPremium:     boolean;
+  setMembership: (tier: MembershipTier) => Promise<void>;
+
+  // Favorite exercises
+  favoriteExerciseIds:    string[];
+  toggleFavoriteExercise: (exerciseId: string) => Promise<void>;
+  isFavoriteExercise:     (exerciseId: string) => boolean;
+
+  // Personal (generated) program — premium
+  customProgram:     Program | null;
+  saveCustomProgram: (p: Program) => Promise<void>;
+  /** Resolves both catalog programs and the user's custom program */
+  getProgram:        (programId: string) => Program | undefined;
 
   // Legacy weight tracking
   progress:        ProgressData;
@@ -96,24 +116,33 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [progress,             setProgress]             = useState<ProgressData>(defaultProgress);
   const [activeProgram,        setActiveProgram]        = useState<ActiveProgram | null>(null);
   const [workoutLogs,          setWorkoutLogs]          = useState<WorkoutLog[]>([]);
+  const [membership,           setMembershipState]      = useState<MembershipTier>('free');
+  const [favoriteExerciseIds,  setFavoriteExerciseIds]  = useState<string[]>([]);
+  const [customProgram,        setCustomProgram]        = useState<Program | null>(null);
   const [loading,              setLoading]              = useState(true);
 
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
     try {
-      const [profJ, onbStr, progJ, activePJ, logsJ] = await Promise.all([
+      const [profJ, onbStr, progJ, activePJ, logsJ, memStr, favJ, customJ] = await Promise.all([
         AsyncStorage.getItem(USER_KEY),
         AsyncStorage.getItem(ONBOARDING_KEY),
         AsyncStorage.getItem(PROGRESS_KEY),
         AsyncStorage.getItem(ACTIVE_PROG_KEY),
         AsyncStorage.getItem(WORKOUT_LOGS_KEY),
+        AsyncStorage.getItem(MEMBERSHIP_KEY),
+        AsyncStorage.getItem(FAVORITES_KEY),
+        AsyncStorage.getItem(CUSTOM_PROG_KEY),
       ]);
       if (profJ)    setProfile(JSON.parse(profJ));
       if (onbStr === 'true') setIsOnboardingComplete(true);
       if (progJ)    setProgress(JSON.parse(progJ));
       if (activePJ) setActiveProgram(JSON.parse(activePJ));
       if (logsJ)    setWorkoutLogs(JSON.parse(logsJ));
+      if (memStr === 'premium') setMembershipState('premium');
+      if (favJ)     setFavoriteExerciseIds(JSON.parse(favJ));
+      if (customJ)  setCustomProgram(JSON.parse(customJ));
     } catch { /* ignore first-run errors */ } finally {
       setLoading(false);
     }
@@ -129,6 +158,40 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     setIsOnboardingComplete(true);
   }, []);
+
+  // ── Membership ────────────────────────────────────────────────────────────
+  const setMembership = useCallback(async (tier: MembershipTier) => {
+    await AsyncStorage.setItem(MEMBERSHIP_KEY, tier);
+    setMembershipState(tier);
+  }, []);
+
+  // ── Favorite exercises ────────────────────────────────────────────────────
+  const toggleFavoriteExercise = useCallback(async (exerciseId: string) => {
+    const updated = favoriteExerciseIds.includes(exerciseId)
+      ? favoriteExerciseIds.filter((id) => id !== exerciseId)
+      : [...favoriteExerciseIds, exerciseId];
+    await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
+    setFavoriteExerciseIds(updated);
+  }, [favoriteExerciseIds]);
+
+  const isFavoriteExercise = useCallback(
+    (exerciseId: string) => favoriteExerciseIds.includes(exerciseId),
+    [favoriteExerciseIds],
+  );
+
+  // ── Custom (generated) program ────────────────────────────────────────────
+  const saveCustomProgram = useCallback(async (p: Program) => {
+    await AsyncStorage.setItem(CUSTOM_PROG_KEY, JSON.stringify(p));
+    setCustomProgram(p);
+  }, []);
+
+  const getProgram = useCallback(
+    (programId: string): Program | undefined => {
+      if (customProgram && customProgram.id === programId) return customProgram;
+      return getProgramById(programId);
+    },
+    [customProgram],
+  );
 
   // ── Weight entry (legacy) ─────────────────────────────────────────────────
   const addWeightEntry = useCallback(async (weight: number) => {
@@ -155,7 +218,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!activeProgram) return;
     if (activeProgram.completedAt) return; // already complete, no-op
 
-    const program = getProgramById(activeProgram.programId);
+    const program = getProgram(activeProgram.programId);
     if (!program) return;
 
     const sessionKey = `W${activeProgram.weekNumber}D${activeProgram.dayIndex}`;
@@ -203,7 +266,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     await AsyncStorage.setItem(ACTIVE_PROG_KEY, JSON.stringify(updated));
     setActiveProgram(updated);
-  }, [activeProgram]);
+  }, [activeProgram, getProgram]);
 
   const abandonProgram = useCallback(async () => {
     await AsyncStorage.removeItem(ACTIVE_PROG_KEY);
@@ -242,12 +305,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.multiRemove([
       USER_KEY, ONBOARDING_KEY, PROGRESS_KEY,
       ACTIVE_PROG_KEY, WORKOUT_LOGS_KEY,
+      MEMBERSHIP_KEY, FAVORITES_KEY, CUSTOM_PROG_KEY,
     ]);
     setProfile(null);
     setIsOnboardingComplete(false);
     setProgress(defaultProgress);
     setActiveProgram(null);
     setWorkoutLogs([]);
+    setMembershipState('free');
+    setFavoriteExerciseIds([]);
+    setCustomProgram(null);
   }, []);
 
   // ── Derived stats ─────────────────────────────────────────────────────────
@@ -265,6 +332,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     () => ({
       profile, isOnboardingComplete, loading,
       saveProfile, completeOnboarding,
+      membership, isPremium: membership === 'premium', setMembership,
+      favoriteExerciseIds, toggleFavoriteExercise, isFavoriteExercise,
+      customProgram, saveCustomProgram, getProgram,
       progress, addWeightEntry,
       activeProgram, startProgram, advanceProgramDay, abandonProgram,
       workoutLogs, saveWorkoutLog, getLastExerciseSets, getExerciseHistory,
@@ -274,6 +344,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     [
       profile, isOnboardingComplete, loading,
       saveProfile, completeOnboarding,
+      membership, setMembership,
+      favoriteExerciseIds, toggleFavoriteExercise, isFavoriteExercise,
+      customProgram, saveCustomProgram, getProgram,
       progress, addWeightEntry,
       activeProgram, startProgram, advanceProgramDay, abandonProgram,
       workoutLogs, saveWorkoutLog, getLastExerciseSets, getExerciseHistory,

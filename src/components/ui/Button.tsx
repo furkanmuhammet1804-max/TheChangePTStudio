@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -5,9 +6,10 @@ import {
   Text,
   TouchableOpacity,
   TouchableOpacityProps,
+  View,
   ViewStyle,
 } from 'react-native';
-import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
+import { borderRadius, colors, gradients, shadows, spacing, typography } from '@/src/theme';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -17,6 +19,11 @@ interface ButtonProps extends TouchableOpacityProps {
   fullWidth?: boolean;
   style?: ViewStyle;
 }
+
+const GRADIENT_VARIANTS: Record<string, readonly string[]> = {
+  primary: gradients.accent,
+  gold: gradients.gold,
+};
 
 export function Button({
   title,
@@ -28,31 +35,46 @@ export function Button({
   disabled,
   ...rest
 }: ButtonProps) {
+  const isGradient = variant === 'primary' || variant === 'gold';
+  const isDisabled = disabled || loading;
+
+  const content = loading ? (
+    <ActivityIndicator
+      color={variant === 'ghost' || variant === 'secondary' ? colors.accent : colors.background}
+      size="small"
+    />
+  ) : (
+    <Text style={[styles.label, styles[`label_${variant}`], styles[`labelSize_${size}`]]}>
+      {title}
+    </Text>
+  );
+
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
-      disabled={disabled || loading}
+      activeOpacity={0.85}
+      disabled={isDisabled}
       style={[
         styles.base,
-        styles[variant],
         styles[`size_${size}`],
         fullWidth && styles.fullWidth,
-        (disabled || loading) && styles.disabled,
-        variant === 'primary' && shadows.accent,
+        !isGradient && styles[variant],
+        isGradient && (variant === 'gold' ? shadows.gold : shadows.accent),
+        isDisabled && styles.disabled,
         style,
       ]}
       {...rest}
     >
-      {loading ? (
-        <ActivityIndicator
-          color={variant === 'ghost' ? colors.accent : colors.background}
-          size="small"
+      {isGradient && (
+        <LinearGradient
+          colors={GRADIENT_VARIANTS[variant] as [string, string, ...string[]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
         />
-      ) : (
-        <Text style={[styles.label, styles[`label_${variant}`], styles[`labelSize_${size}`]]}>
-          {title}
-        </Text>
       )}
+      {/* Top sheen for extra depth on gradient buttons */}
+      {isGradient && <View style={styles.sheen} pointerEvents="none" />}
+      {content}
     </TouchableOpacity>
   );
 }
@@ -61,49 +83,51 @@ const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-  primary: {
-    backgroundColor: colors.accent,
+    overflow: 'hidden',
   },
   secondary: {
     backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderLight,
   },
   ghost: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.accent,
   },
-  gold: {
-    backgroundColor: colors.gold,
-    ...shadows.gold,
+  sheen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '45%',
+    backgroundColor: 'rgba(255,255,255,0.14)',
   },
   size_sm: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 2,
   },
   size_md: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md - 2,
+    paddingVertical: spacing.md - 1,
   },
   size_lg: {
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.md + 2,
   },
   fullWidth: {
     width: '100%',
   },
   disabled: {
-    opacity: 0.45,
+    opacity: 0.4,
   },
   label: {
     ...typography.h4,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
   label_primary: {
     color: colors.background,
@@ -119,14 +143,14 @@ const styles = StyleSheet.create({
   },
   labelSize_sm: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   labelSize_md: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   labelSize_lg: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '900',
   },
 });

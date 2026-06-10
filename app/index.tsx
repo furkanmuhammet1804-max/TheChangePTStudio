@@ -5,7 +5,6 @@ import {
   Dimensions,
   Image,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { useUser } from '@/src/contexts/UserContext';
@@ -66,7 +65,7 @@ export default function SplashAnimationScreen() {
       </Animated.View>
 
       <Animated.Text style={[styles.tagline, { opacity: taglineOpacity }]}>
-        Change starts today.
+        Değişim bugün başlar.
       </Animated.Text>
     </View>
   );

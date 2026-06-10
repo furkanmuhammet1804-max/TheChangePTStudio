@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LockedScreen } from '@/src/components/premium/LockedScreen';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
@@ -19,17 +20,37 @@ import {
   DIFFICULTY_LABELS,
   EQUIPMENT_LABELS,
   MUSCLE_LABELS,
+  UPGRADE_MESSAGES,
 } from '@/src/constants/strings';
-import { getProgramById } from '@/src/data/programs';
 import { getWorkoutById } from '@/src/data/workouts';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 
 export default function ProgramDetailScreen() {
-  const { id }                                           = useLocalSearchParams<{ id: string }>();
-  const { activeProgram, startProgram, abandonProgram }  = useUser();
-  const program                                          = getProgramById(id ?? '');
-  const [expandedWeek, setExpandedWeek]                  = useState<number | null>(1);
-  const [starting, setStarting]                          = useState(false);
+  const { id }                                  = useLocalSearchParams<{ id: string }>();
+  const {
+    activeProgram, startProgram, abandonProgram,
+    isPremium, getProgram,
+  } = useUser();
+  const program                                 = getProgram(id ?? '');
+  const [expandedWeek, setExpandedWeek]         = useState<number | null>(1);
+  const [starting, setStarting]                 = useState(false);
+
+  // Programs and daily plans are premium-only — show a gentle gate instead
+  if (!isPremium) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+          <Text style={styles.backLabel}>Geri</Text>
+        </TouchableOpacity>
+        <LockedScreen
+          headerTitle={program?.title ?? 'Program'}
+          lockTitle="Bu program Premium üyelere özel"
+          lockMessage={UPGRADE_MESSAGES.program}
+        />
+      </SafeAreaView>
+    );
+  }
 
   if (!program) {
     return (

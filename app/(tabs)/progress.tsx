@@ -11,9 +11,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LockedScreen } from '@/src/components/premium/LockedScreen';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { useUser } from '@/src/contexts/UserContext';
-import { getProgramById } from '@/src/data/programs';
+import { UPGRADE_MESSAGES } from '@/src/constants/strings';
 import { getWorkoutById } from '@/src/data/workouts';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 import { calcBMI, formatDate, formatSeconds, formatWeight } from '@/src/utils/formatters';
@@ -28,6 +29,8 @@ export default function ProgressScreen() {
     currentStreak,
     weeklyCompletedCount,
     activeProgram,
+    isPremium,
+    getProgram,
   } = useUser();
 
   const [weightModalVisible, setWeightModalVisible] = useState(false);
@@ -55,7 +58,7 @@ export default function ProgressScreen() {
   // Program progress
   const programProgress = useMemo(() => {
     if (!activeProgram) return null;
-    const program = getProgramById(activeProgram.programId);
+    const program = getProgram(activeProgram.programId);
     if (!program) return null;
     const totalSessions = program.weeks.reduce((sum, w) => sum + w.workouts.length, 0);
     const done          = activeProgram.completedSessions.length;
@@ -67,7 +70,7 @@ export default function ProgressScreen() {
       total:          totalSessions,
       percent:        done / totalSessions,
     };
-  }, [activeProgram]);
+  }, [activeProgram, getProgram]);
 
   // Recent workout history (last 10)
   const recentLogs = useMemo(
@@ -91,6 +94,27 @@ export default function ProgressScreen() {
       setWeightModalVisible(false);
     }
   };
+
+  // İlerleme sistemi premium özelliği — ücretsiz kullanıcıya nazik kilit
+  if (!isPremium) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <LockedScreen
+          headerTitle="Gelişimim"
+          headerSubtitle="Detaylı ilerleme takibi Premium üyelere özel"
+          lockTitle="Gelişimini detaylı takip et"
+          lockMessage={UPGRADE_MESSAGES.progress}
+          features={[
+            { icon: 'scale-outline',       label: 'Kilo geçmişi' },
+            { icon: 'barbell-outline',     label: 'Güç artışı takibi' },
+            { icon: 'stats-chart-outline', label: 'Toplam antrenman hacmi' },
+            { icon: 'trophy-outline',      label: 'Tamamlanan antrenmanlar' },
+            { icon: 'flame-outline',       label: 'Seri takibi' },
+          ]}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>

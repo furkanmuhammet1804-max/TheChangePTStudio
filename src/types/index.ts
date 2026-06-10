@@ -2,8 +2,10 @@ export type MuscleGroup =
   | 'chest'
   | 'back'
   | 'shoulders'
-  | 'arms'
+  | 'biceps'
+  | 'triceps'
   | 'legs'
+  | 'glutes'
   | 'core'
   | 'cardio'
   | 'mobility'
@@ -15,11 +17,19 @@ export type Equipment =
   | 'none'
   | 'dumbbells'
   | 'barbell'
+  | 'kettlebell'
   | 'machine'
   | 'cables'
   | 'resistance_bands'
+  | 'trx'
   | 'pull_up_bar'
   | 'mixed';
+
+/** Where an exercise can be performed */
+export type Environment = 'home' | 'gym' | 'outdoor';
+
+/** Membership tier — gates program & progress features */
+export type MembershipTier = 'free' | 'premium';
 
 export type ProgramCategory =
   | 'all'
@@ -50,6 +60,7 @@ export interface Exercise {
   muscleGroup: MuscleGroup;
   difficulty: Difficulty;
   equipment: Equipment;
+  environments: Environment[];
   description: string;
   howTo: string[];
   tips: string[];
@@ -58,6 +69,8 @@ export interface Exercise {
   sets?: number;
   reps?: string;
   rest?: number;
+  imageUrl?: string;
+  gifUrl?: string;
   videoUrl?: string;
 }
 
@@ -104,6 +117,8 @@ export interface Program {
   targetMuscles: MuscleGroup[];
   weeks: ProgramWeek[];
   badge?: string;
+  /** True for the user's generated personal program (premium) */
+  isCustom?: boolean;
 }
 
 // ─── User ──────────────────────────────────────────────────────────────────

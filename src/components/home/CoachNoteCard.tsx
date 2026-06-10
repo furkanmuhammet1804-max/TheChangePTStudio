@@ -14,7 +14,7 @@ export function CoachNoteCard({ note }: CoachNoteCardProps) {
         <Ionicons name="chatbubble-ellipses" size={18} color={colors.gold} />
         <Text style={styles.label}>KOÇ NOTU</Text>
       </View>
-      <Text style={styles.note}>"{note}"</Text>
+      <Text style={styles.note}>{`"${note}"`}</Text>
     </View>
   );
 }

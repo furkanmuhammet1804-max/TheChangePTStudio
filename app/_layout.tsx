@@ -29,10 +29,12 @@ export default function RootLayout() {
         <Stack.Screen name="setup" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="program/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="program/create" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="workout/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="workout/player" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="exercise/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="premium" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="admin" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </UserProvider>
   );

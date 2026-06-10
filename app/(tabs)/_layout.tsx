@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
-import { borderRadius, colors, typography } from '@/src/theme';
+import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, typography } from '@/src/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -22,11 +23,17 @@ const TABS: TabConfig[] = [
 ];
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomPad = Math.max(insets.bottom, 10);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          { height: 60 + bottomPad, paddingBottom: bottomPad },
+        ],
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: styles.tabLabel,
@@ -40,11 +47,14 @@ export default function TabLayout() {
           options={{
             title: tab.title,
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons
-                name={focused ? tab.iconActive : tab.icon}
-                size={22}
-                color={color}
-              />
+              <View style={styles.iconWrap}>
+                {focused && <View style={styles.activeIndicator} />}
+                <Ionicons
+                  name={focused ? tab.iconActive : tab.icon}
+                  size={23}
+                  color={color}
+                />
+              </View>
             ),
           }}
         />
@@ -58,18 +68,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopColor: colors.border,
     borderTopWidth: 1,
-    height: Platform.OS === 'ios' ? 84 : 64,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-    paddingTop: 8,
+    paddingTop: 10,
     elevation: 0,
   },
   tabLabel: {
     ...typography.caption,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     marginTop: 2,
   },
   tabItem: {
-    borderRadius: borderRadius.sm,
+    paddingTop: 2,
+  },
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    top: -10,
+    width: 22,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: colors.accent,
   },
 });

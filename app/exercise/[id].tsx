@@ -11,17 +11,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
+import { useUser } from '@/src/contexts/UserContext';
 import {
   DIFFICULTY_LABELS,
+  ENVIRONMENT_LABELS,
   EQUIPMENT_LABELS,
   MUSCLE_LABELS,
 } from '@/src/constants/strings';
-import { getExerciseById, exercises } from '@/src/data/exercises';
+import { getExerciseById } from '@/src/data/exercises';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const exercise = getExerciseById(id ?? '');
+  const { isFavoriteExercise, toggleFavoriteExercise } = useUser();
   const [activeTab, setActiveTab] = useState<'howto' | 'tips' | 'mistakes'>('howto');
 
   if (!exercise) {
@@ -39,22 +42,38 @@ export default function ExerciseDetailScreen() {
     .map((altId) => getExerciseById(altId))
     .filter(Boolean);
 
+  const isFav = isFavoriteExercise(exercise.id);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-        <Ionicons name="arrow-back" size={22} color={colors.text} />
-        <Text style={styles.backLabel}>Egzersizler</Text>
-      </TouchableOpacity>
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+          <Text style={styles.backLabel}>Egzersizler</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.favBtn, isFav && styles.favBtnActive]}
+          onPress={() => toggleFavoriteExercise(exercise.id)}
+          activeOpacity={0.7}
+          hitSlop={8}
+        >
+          <Ionicons
+            name={isFav ? 'heart' : 'heart-outline'}
+            size={22}
+            color={isFav ? colors.error : colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Video Placeholder */}
+        {/* Media: image / GIF / video for proper form */}
         <View style={styles.videoPlaceholder}>
           <Ionicons name="videocam-outline" size={56} color={colors.textMuted} />
-          <Text style={styles.videoText}>Video / GIF Yakında</Text>
+          <Text style={styles.videoText}>Görsel / GIF / Video Yakında</Text>
         </View>
 
         {/* Title & Tags */}
@@ -64,6 +83,18 @@ export default function ExerciseDetailScreen() {
             <Badge label={MUSCLE_LABELS[exercise.muscleGroup]} variant="accent" />
             <Badge label={DIFFICULTY_LABELS[exercise.difficulty]} variant="surface" />
             <Badge label={EQUIPMENT_LABELS[exercise.equipment]} variant="surface" />
+          </View>
+          <View style={styles.tagRow}>
+            {exercise.environments.map((env) => (
+              <View key={env} style={styles.envChip}>
+                <Ionicons
+                  name={env === 'home' ? 'home-outline' : env === 'gym' ? 'barbell-outline' : 'sunny-outline'}
+                  size={12}
+                  color={colors.textSecondary}
+                />
+                <Text style={styles.envChipText}>{ENVIRONMENT_LABELS[env]}</Text>
+              </View>
+            ))}
           </View>
           <Text style={styles.description}>{exercise.description}</Text>
         </View>
@@ -178,6 +209,12 @@ const metaStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: spacing.md,
+  },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -186,6 +223,32 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   backLabel: { ...typography.body, color: colors.text },
+  favBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  favBtnActive: {
+    borderColor: colors.error,
+    backgroundColor: 'rgba(255,75,75,0.1)',
+  },
+  envChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  envChipText: { ...typography.caption, color: colors.textSecondary },
   scroll: { flex: 1 },
   content: { paddingBottom: spacing.xxl, gap: spacing.lg },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },

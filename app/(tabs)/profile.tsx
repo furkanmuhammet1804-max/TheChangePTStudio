@@ -20,7 +20,18 @@ import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme'
 import { formatWeight } from '@/src/utils/formatters';
 
 export default function ProfileScreen() {
-  const { profile, totalWorkouts, currentStreak, resetAll } = useUser();
+  const { profile, totalWorkouts, currentStreak, resetAll, isPremium, setMembership } = useUser();
+
+  const handleLeavePremium = () => {
+    Alert.alert(
+      'Premium Önizlemeden Çık',
+      'Premium özelliklerine erişimin kapanacak. Devam etmek istiyor musun?',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        { text: 'Çık', style: 'destructive', onPress: () => setMembership('free') },
+      ],
+    );
+  };
 
   const handleReset = () => {
     Alert.alert(
@@ -66,6 +77,16 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.name}>{profile.name}</Text>
           <Text style={styles.goalLabel}>{GOAL_LABELS[profile.goal]}</Text>
+          <View style={[styles.tierBadge, isPremium && styles.tierBadgePremium]}>
+            <Ionicons
+              name={isPremium ? 'star' : 'person-outline'}
+              size={12}
+              color={isPremium ? colors.gold : colors.textSecondary}
+            />
+            <Text style={[styles.tierBadgeText, isPremium && styles.tierBadgeTextPremium]}>
+              {isPremium ? 'PREMIUM ÜYE' : 'ÜCRETSİZ ÜYE'}
+            </Text>
+          </View>
         </View>
 
         {/* Stats */}
@@ -102,20 +123,22 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Premium Banner */}
-        <TouchableOpacity
-          style={styles.premiumBanner}
-          activeOpacity={0.88}
-          onPress={() => router.push('/premium')}
-        >
-          <View>
-            <Text style={styles.premiumTitle}>Premium'a Geç</Text>
-            <Text style={styles.premiumSub}>
-              Kişisel PT koçu, özel programlar ve daha fazlası
-            </Text>
-          </View>
-          <Ionicons name="arrow-forward" size={22} color={colors.background} />
-        </TouchableOpacity>
+        {/* Premium Banner — only when free, value-focused */}
+        {!isPremium && (
+          <TouchableOpacity
+            style={styles.premiumBanner}
+            activeOpacity={0.88}
+            onPress={() => router.push('/premium')}
+          >
+            <View style={styles.premiumBannerLeft}>
+              <Text style={styles.premiumTitle}>{"Premium'u Keşfet"}</Text>
+              <Text style={styles.premiumSub}>
+                Kişiye özel programlar, günlük planlar ve detaylı ilerleme takibi
+              </Text>
+            </View>
+            <Ionicons name="arrow-forward" size={22} color={colors.background} />
+          </TouchableOpacity>
+        )}
 
         {/* Settings */}
         <View style={styles.card}>
@@ -125,6 +148,18 @@ export default function ProfileScreen() {
             label="Profili Düzenle"
             onPress={() => router.push('/setup')}
           />
+          <SettingsRow
+            icon={isPremium ? 'star-outline' : 'star'}
+            label={isPremium ? 'Üyeliği Yönet' : "Premium'u Keşfet"}
+            onPress={() => router.push('/premium')}
+          />
+          {isPremium && (
+            <SettingsRow
+              icon="exit-outline"
+              label="Premium Önizlemeden Çık"
+              onPress={handleLeavePremium}
+            />
+          )}
           <SettingsRow
             icon="notifications-outline"
             label="Bildirimler"
@@ -139,6 +174,11 @@ export default function ProfileScreen() {
             icon="information-circle-outline"
             label="Hakkında"
             onPress={() => Alert.alert('The Change PT Studio', 'Versiyon 1.0.0\nBuilt for your next level.')}
+          />
+          <SettingsRow
+            icon="shield-checkmark-outline"
+            label="Admin Panel (Önizleme)"
+            onPress={() => router.push('/admin')}
           />
           <SettingsRow
             icon="refresh-outline"
@@ -270,6 +310,25 @@ const styles = StyleSheet.create({
   avatarText: { ...typography.h1, color: colors.accent },
   name: { ...typography.h2, color: colors.text },
   goalLabel: { ...typography.body, color: colors.textSecondary },
+  tierBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: spacing.xs,
+  },
+  tierBadgePremium: {
+    backgroundColor: colors.goldMuted,
+    borderColor: colors.gold,
+  },
+  tierBadgeText: { ...typography.caption, color: colors.textSecondary, fontWeight: '800', letterSpacing: 0.8 },
+  tierBadgeTextPremium: { color: colors.gold },
+  premiumBannerLeft: { flex: 1, paddingRight: spacing.md },
   statsRow: { flexDirection: 'row', gap: spacing.sm },
   card: {
     backgroundColor: colors.surface,

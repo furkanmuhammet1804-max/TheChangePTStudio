@@ -1,5 +1,5 @@
 export const APP_NAME = 'The Change PT Studio';
-export const APP_TAGLINE = 'Change starts today.';
+export const APP_TAGLINE = 'Değişim bugün başlar.';
 
 export const GOAL_LABELS: Record<string, string> = {
   fat_burn: 'Yağ Yakmak',
@@ -20,23 +20,48 @@ export const MUSCLE_LABELS: Record<string, string> = {
   chest: 'Göğüs',
   back: 'Sırt',
   shoulders: 'Omuz',
-  arms: 'Kol',
+  biceps: 'Biceps',
+  triceps: 'Triceps',
   legs: 'Bacak',
+  glutes: 'Kalça',
   core: 'Karın',
   cardio: 'Kardiyo',
   mobility: 'Mobilite',
   full_body: 'Tüm Vücut',
 };
 
+// Kas grubu kartlarında gösterilen kısa, güçlü açıklamalar
+export const MUSCLE_TAGLINES: Record<string, string> = {
+  chest: 'İtme gücünü geliştir.',
+  back: 'Duruşunu ve kuvvetini artır.',
+  shoulders: 'Daha güçlü ve dengeli dur.',
+  biceps: 'Ön kolunu şekillendir, güçlendir.',
+  triceps: 'Arka kolunu sıkılaştır.',
+  legs: 'Temel gücün burada başlar.',
+  glutes: 'Kalça gücünü ve formunu geliştir.',
+  core: 'Merkez bölgeni güçlendir.',
+  cardio: 'Dayanıklılığını ve enerjini yükselt.',
+  mobility: 'Esne, aç ve sağlam kal.',
+  full_body: 'Tüm vücudunu dengeli çalıştır.',
+};
+
 export const EQUIPMENT_LABELS: Record<string, string> = {
   none: 'Ekipmansız',
-  dumbbells: 'Dumbbell',
-  barbell: 'Barbell',
+  dumbbells: 'Dambıl',
+  barbell: 'Halter',
+  kettlebell: 'Kettlebell',
   machine: 'Makine',
   cables: 'Kablo',
   resistance_bands: 'Direnç Bandı',
+  trx: 'TRX',
   pull_up_bar: 'Barfiks',
   mixed: 'Karma',
+};
+
+export const ENVIRONMENT_LABELS: Record<string, string> = {
+  home: 'Evde',
+  gym: 'Salonda',
+  outdoor: 'Dış Mekanda',
 };
 
 export const LOCATION_LABELS: Record<string, string> = {
@@ -49,53 +74,116 @@ export const CATEGORY_LABELS: Record<string, string> = {
   all: 'Tümü',
   fat_burn: 'Yağ Yakım',
   muscle_gain: 'Kas Kazanım',
-  full_body: 'Full Body',
-  core: 'Core',
+  full_body: 'Tüm Vücut',
+  core: 'Merkez',
   home: 'Evde',
   gym: 'Salon',
   beginner: 'Başlangıç',
 };
 
+// Koç notları — kısa, güçlü, motive edici (emojisiz)
 export const COACH_NOTES = [
-  'Bugün mükemmel olmak zorunda değilsin, sadece başlamalısın.',
-  'Her tekrar seni bir adım daha yaklaştırır. Dur ma.',
-  'Vücudun değişir. Önce zihnin değişmeli.',
-  'Acı geçici, gurur kalıcıdır.',
-  'Küçük adımlar büyük farklar yaratır.',
-  'Bugün antrenman yaptın mı? Yarını daha iyi yapıyorsun.',
-  'Disiplin motivasyondan güçlüdür.',
-  'Hedefine ulaşmak bir maratondu, sprint değil.',
+  'Bugün mükemmel olmak zorunda değilsin. Sadece başla.',
+  'Her tekrar seni hedefine bir adım yaklaştırır.',
+  'Önce zihnin değişir, sonra bedenin.',
+  'Disiplin, motivasyon bittiğinde devreye girer.',
+  'Küçük adımlar büyük dönüşümler yaratır.',
+  'Bugünkü çaban, yarınki gücün.',
+  'Vazgeçmek yok. Sadece bir sonraki tekrar.',
+  'Güçlü olmak bir seçimdir. Bugün onu seç.',
 ];
 
+// Uygulama genelinde dönüşümlü kullanılabilen marka sloganları
 export const MOTIVATIONAL_SLOGANS = [
-  'Change starts today.',
-  'Train with purpose.',
-  'Built for your next level.',
-  'Your body. Your discipline. Your change.',
-  'The day you decide is the day you change.',
+  'Değişim bugün başlar.',
+  'Güç tesadüf değildir.',
+  'Disiplin sonuç getirir.',
+  'Her gün bir adım daha ileri.',
+  'Hedefine sadık kal.',
+  'Güçlü olmak bir seçimdir.',
+  'Bugün vazgeçmezsen yarın farklı olur.',
+  'Kendinin en iyi versiyonunu oluştur.',
+];
+
+// Ana sayfada selamlamanın altında gösterilen motive edici satırlar
+export const HOME_HEADLINES = [
+  'Bugün kendin için attığın her adım, yarının sonucunu belirler.',
+  'Disiplin bugün, sonuç yarın.',
+  'Bugün de en iyi versiyonuna bir adım daha yaklaş.',
+  'Güç, her gün gösterdiğin küçük çabalarda saklı.',
 ];
 
 export const ONBOARDING_SLIDES = [
   {
-    title: 'Change starts today.',
-    description:
-      'Hedefine göre kişisel antrenman deneyimini oluştur. Sana özel, sana göre.',
+    eyebrow: 'THE CHANGE PT STUDIO',
+    title: 'Değişim bugün başlar.',
+    description: 'Hedeflerine ulaşmak için ilk adımı at.',
   },
   {
-    title: 'Train with purpose.',
-    description:
-      'Yağ yak, kas kazan, güçlen veya formunu koru. Hedefin ne olursa olsun, doğru programla başla.',
+    eyebrow: 'AMACINA ODAKLAN',
+    title: 'Amacına uygun çalış.',
+    description: 'Yağ yak, kas kazan veya formunu koru.',
   },
   {
-    title: 'Track your progress.',
-    description:
-      'Antrenmanlarını, kilonu ve gelişimini takip et. Her adım önemli, her ilerleme görünür.',
+    eyebrow: 'GELİŞİMİNİ GÖR',
+    title: 'Gelişimini takip et.',
+    description: 'Attığın her adımı kaydet ve ilerlemeni izle.',
   },
 ];
 
 export const QUICK_ACCESS = [
   { id: 'fat_burn', label: 'Yağ Yakım', icon: 'flame' as const },
   { id: 'muscle_gain', label: 'Kas Kazanım', icon: 'barbell' as const },
-  { id: 'core', label: 'Core', icon: 'body' as const },
+  { id: 'core', label: 'Merkez', icon: 'body' as const },
   { id: 'home', label: 'Evde', icon: 'home' as const },
+];
+
+// ─── Premium ────────────────────────────────────────────────────────────────
+
+export const PREMIUM_CTA = "Premium'u Keşfet";
+
+// Nazik yükseltme mesajları — özellik bazlı
+export const UPGRADE_MESSAGES = {
+  program:
+    'Premium ile sana özel program oluşturabilir ve gelişimini takip edebilirsin.',
+  todayWorkout:
+    'Premium ile her gün ne yapacağını bilirsin. Sana özel günlük antrenman planın hazır olur.',
+  progress:
+    'Premium ile kilo geçmişini, güç artışını ve toplam hacmini detaylı takip edebilirsin.',
+} as const;
+
+// Premium ekranındaki fayda kartları — agresif satış yok, gerçek fayda var
+export const PREMIUM_BENEFITS = [
+  {
+    icon: 'person-outline' as const,
+    label: 'Kişiye özel programlar',
+    desc: 'Hedefine, seviyene ve haftalık planına göre hazırlanan antrenman programı',
+  },
+  {
+    icon: 'today-outline' as const,
+    label: 'Günlük antrenman planları',
+    desc: 'Her gün ne yapacağını bil — düşünme, sadece antrenmana odaklan',
+  },
+  {
+    icon: 'trending-up-outline' as const,
+    label: 'İlerlemeni detaylı takip et',
+    desc: 'Kilo geçmişi, güç artışı, toplam hacim ve seri takibi',
+  },
+  {
+    icon: 'analytics-outline' as const,
+    label: 'Performans analizleri',
+    desc: 'Tamamlanan antrenmanlar ve haftalık gelişim raporları',
+  },
+  {
+    icon: 'sparkles-outline' as const,
+    label: 'Yapay Zeka Koç',
+    desc: 'Antrenmanlarına göre kişisel öneriler',
+    comingSoon: true,
+  },
+  {
+    icon: 'restaurant-outline' as const,
+    label: 'Beslenme Bölümü',
+    desc: 'Hedefe uygun beslenme rehberi',
+    comingSoon: true,
+  },
 ];

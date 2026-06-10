@@ -16,7 +16,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { useUser } from '@/src/contexts/UserContext';
 import { getExerciseById } from '@/src/data/exercises';
-import { getProgramById } from '@/src/data/programs';
 import { getWorkoutById } from '@/src/data/workouts';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 import { ExerciseLog, SetLog, WorkoutLog } from '@/src/types';
@@ -57,7 +56,7 @@ function parseReps(str: string, fallback: number): number {
 
 export default function WorkoutPlayerScreen() {
   const { workoutId } = useLocalSearchParams<{ workoutId: string }>();
-  const { activeProgram, saveWorkoutLog, advanceProgramDay, getLastExerciseSets } = useUser();
+  const { activeProgram, saveWorkoutLog, advanceProgramDay, getLastExerciseSets, getProgram } = useUser();
   const workout = getWorkoutById(workoutId ?? '');
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -166,7 +165,7 @@ export default function WorkoutPlayerScreen() {
     };
 
     if (activeProgram) {
-      const program = getProgramById(activeProgram.programId);
+      const program = getProgram(activeProgram.programId);
       const week    = program?.weeks.find((w) => w.weekNumber === activeProgram.weekNumber);
       const pw      = week?.workouts[activeProgram.dayIndex];
       if (pw?.workoutId === workout.id) {
@@ -184,7 +183,7 @@ export default function WorkoutPlayerScreen() {
 
     setCompletedLog(log);
     setPlayerState('done');
-  }, [workout, startedAt, activeProgram, saveWorkoutLog, advanceProgramDay]);
+  }, [workout, startedAt, activeProgram, saveWorkoutLog, advanceProgramDay, getProgram]);
 
   const handleSetDone = useCallback(() => {
     if (!workout || !currentWE || isProcessingRef.current) return;

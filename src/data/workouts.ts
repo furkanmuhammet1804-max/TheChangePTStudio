@@ -3,7 +3,7 @@ import { Workout } from '@/src/types';
 export const workouts: Workout[] = [
   {
     id: 'w_full_body_strength',
-    name: 'Full Body Strength',
+    name: 'Tüm Vücut Güç',
     duration: 45,
     calories: 280,
     difficulty: 'beginner',
@@ -19,7 +19,7 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_mobility_core',
-    name: 'Mobility & Core',
+    name: 'Mobilite & Merkez',
     duration: 35,
     calories: 180,
     difficulty: 'beginner',
@@ -35,11 +35,11 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_conditioning',
-    name: 'Conditioning',
+    name: 'Kondisyon',
     duration: 30,
     calories: 320,
     difficulty: 'intermediate',
-    description: 'Kardiovasküler kondisyon ve dayanıklılık antrenmanı.',
+    description: 'Kardiyovasküler kondisyon ve dayanıklılık antrenmanı.',
     exercises: [
       { exerciseId: 'ex_jumping_jack', sets: 3, reps: '45 sn', rest: 30 },
       { exerciseId: 'ex_high_knees', sets: 3, reps: '45 sn', rest: 30 },
@@ -50,7 +50,7 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_fat_burn_hiit',
-    name: 'Fat Burn HIIT',
+    name: 'Yağ Yakım HIIT',
     duration: 25,
     calories: 380,
     difficulty: 'intermediate',
@@ -65,7 +65,7 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_fat_burn_strength',
-    name: 'Fat Burn Strength',
+    name: 'Yağ Yakım Güç',
     duration: 40,
     calories: 320,
     difficulty: 'intermediate',
@@ -81,7 +81,7 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_upper_body_mass',
-    name: 'Upper Body Mass',
+    name: 'Üst Vücut Kütle',
     duration: 55,
     calories: 310,
     difficulty: 'intermediate',
@@ -97,11 +97,11 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_lower_body_mass',
-    name: 'Lower Body Mass',
+    name: 'Alt Vücut Kütle',
     duration: 55,
     calories: 360,
     difficulty: 'intermediate',
-    description: 'Alt vücut güç ve hypertrofi antrenmanı.',
+    description: 'Alt vücut güç ve hipertrofi antrenmanı.',
     exercises: [
       { exerciseId: 'ex_squat', sets: 4, reps: '8-10', rest: 120 },
       { exerciseId: 'ex_rdl', sets: 4, reps: '10-12', rest: 90 },
@@ -112,7 +112,7 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_core_day1',
-    name: 'Core Power',
+    name: 'Merkez Güç',
     duration: 30,
     calories: 200,
     difficulty: 'intermediate',
@@ -127,11 +127,11 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_core_day2',
-    name: 'Core Endurance',
+    name: 'Merkez Dayanıklılık',
     duration: 25,
     calories: 170,
     difficulty: 'intermediate',
-    description: 'Core dayanıklılığı ve stabilite.',
+    description: 'Merkez bölge dayanıklılığı ve stabilite.',
     exercises: [
       { exerciseId: 'ex_mountain_climber', sets: 4, reps: '45 sn', rest: 20 },
       { exerciseId: 'ex_plank', sets: 3, reps: '60 sn', rest: 30 },
@@ -141,7 +141,7 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_home_full_body',
-    name: 'Home Full Body',
+    name: 'Evde Tüm Vücut',
     duration: 40,
     calories: 260,
     difficulty: 'beginner',
@@ -157,7 +157,7 @@ export const workouts: Workout[] = [
   },
   {
     id: 'w_home_upper',
-    name: 'Home Upper Body',
+    name: 'Evde Üst Vücut',
     duration: 35,
     calories: 220,
     difficulty: 'beginner',
