@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LockedScreen } from '@/src/components/premium/LockedScreen';
+import { notify } from '@/src/utils/notify';
 import { Button } from '@/src/components/ui/Button';
 import { useUser } from '@/src/contexts/UserContext';
 import {
@@ -65,7 +65,7 @@ export default function CreateProgramScreen() {
 
       router.replace({ pathname: '/program/[id]', params: { id: program.id } });
     } catch {
-      Alert.alert('Hata', 'Program oluşturulamadı. Tekrar dene.');
+      notify('Hata', 'Program oluşturulamadı. Tekrar dene.');
     } finally {
       setCreating(false);
     }

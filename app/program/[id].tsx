@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LockedScreen } from '@/src/components/premium/LockedScreen';
+import { confirmAction } from '@/src/utils/notify';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
@@ -74,45 +74,30 @@ export default function ProgramDetailScreen() {
   const handleStart = async () => {
     if (isThisComplete) {
       // Restart a finished program
-      Alert.alert(
+      const ok = await confirmAction(
         'Programı Yeniden Başlat',
         'İlerleme sıfırlanacak ve baştan başlayacaksın. Devam etmek istiyor musun?',
-        [
-          { text: 'Vazgeç', style: 'cancel' },
-          {
-            text: 'Yeniden Başla',
-            onPress: async () => {
-              setStarting(true);
-              await abandonProgram();
-              await startProgram(program.id);
-              setStarting(false);
-              goToCurrentWorkout();
-            },
-          },
-        ],
       );
+      if (!ok) return;
+      setStarting(true);
+      await abandonProgram();
+      await startProgram(program.id);
+      setStarting(false);
+      goToCurrentWorkout();
       return;
     }
 
     if (isOtherActive) {
-      Alert.alert(
+      const ok = await confirmAction(
         'Aktif Program Var',
         'Başka bir programı devam ettiriyorsun. Mevcut programı bırakıp bu programa geçmek istiyor musun?',
-        [
-          { text: 'Vazgeç', style: 'cancel' },
-          {
-            text: 'Değiştir',
-            style: 'destructive',
-            onPress: async () => {
-              setStarting(true);
-              await abandonProgram();
-              await startProgram(program.id);
-              setStarting(false);
-              goToCurrentWorkout();
-            },
-          },
-        ],
       );
+      if (!ok) return;
+      setStarting(true);
+      await abandonProgram();
+      await startProgram(program.id);
+      setStarting(false);
+      goToCurrentWorkout();
       return;
     }
 

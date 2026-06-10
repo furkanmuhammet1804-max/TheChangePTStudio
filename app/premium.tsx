@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +15,7 @@ import { listPlans, purchasePlan } from '@/src/services/paymentService';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 import { SubscriptionPlanId } from '@/src/types/admin';
 import { formatShortDate } from '@/src/utils/formatters';
+import { notify } from '@/src/utils/notify';
 import { hapticSuccess } from '@/src/utils/haptics';
 
 const PLAN_PERIOD_LABELS: Record<SubscriptionPlanId, string> = {
@@ -44,18 +44,18 @@ export default function PremiumScreen() {
     try {
       const result = await purchasePlan(selectedPlan);
       if (!result.success) {
-        Alert.alert('Satın Alma Başarısız', result.error ?? 'Lütfen tekrar dene.');
+        notify('Satın Alma Başarısız', result.error ?? 'Lütfen tekrar dene.');
         return;
       }
       await setMembership('premium');
       hapticSuccess();
-      Alert.alert(
+      notify(
         'Premium Aktif',
         result.expiresAt
           ? `Üyeliğin ${formatShortDate(result.expiresAt)} tarihine kadar geçerli. İyi antrenmanlar!`
           : 'Premium üyeliğin aktifleşti. İyi antrenmanlar!',
-        [{ text: 'Başla', onPress: () => router.back() }],
       );
+      router.back();
     } finally {
       setPurchasing(false);
     }

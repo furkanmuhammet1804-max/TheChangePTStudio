@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@/src/contexts/UserContext';
+import { confirmAction, notify } from '@/src/utils/notify';
 import {
   DIFFICULTY_LABELS,
   GOAL_LABELS,
@@ -22,33 +22,22 @@ import { formatWeight } from '@/src/utils/formatters';
 export default function ProfileScreen() {
   const { profile, totalWorkouts, currentStreak, resetAll, isPremium, setMembership } = useUser();
 
-  const handleLeavePremium = () => {
-    Alert.alert(
+  const handleLeavePremium = async () => {
+    const ok = await confirmAction(
       'Premium Üyeliği İptal Et',
       'Premium özelliklerine erişimin kapanacak. Devam etmek istiyor musun?',
-      [
-        { text: 'Vazgeç', style: 'cancel' },
-        { text: 'İptal Et', style: 'destructive', onPress: () => setMembership('free') },
-      ],
     );
+    if (ok) await setMembership('free');
   };
 
-  const handleReset = () => {
-    Alert.alert(
+  const handleReset = async () => {
+    const ok = await confirmAction(
       'Sıfırla',
       'Tüm verilerin silinecek ve uygulama yeniden başlayacak. Devam etmek istiyor musun?',
-      [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Sıfırla',
-          style: 'destructive',
-          onPress: async () => {
-            await resetAll();
-            router.replace('/onboarding');
-          },
-        },
-      ],
     );
+    if (!ok) return;
+    await resetAll();
+    router.replace('/onboarding');
   };
 
   if (!profile) {
@@ -168,7 +157,7 @@ export default function ProfileScreen() {
           <SettingsRow
             icon="information-circle-outline"
             label="Hakkında"
-            onPress={() => Alert.alert('The Change PT Studio', 'Versiyon 1.0.0\nBuilt for your next level.')}
+            onPress={() => notify('The Change PT Studio', 'Versiyon 1.0.0\nBuilt for your next level.')}
           />
           <SettingsRow
             icon="refresh-outline"

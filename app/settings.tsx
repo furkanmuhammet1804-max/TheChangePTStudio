@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Switch,
@@ -31,7 +30,7 @@ import {
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 import { NotificationPreferences } from '@/src/types';
 import { hapticTap } from '@/src/utils/haptics';
-import { notify } from '@/src/utils/notify';
+import { confirmAction, notify } from '@/src/utils/notify';
 
 export default function SettingsScreen() {
   const { resetAll } = useUser();
@@ -103,22 +102,14 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleReset = () => {
-    Alert.alert(
+  const handleReset = async () => {
+    const ok = await confirmAction(
       'Verileri Sıfırla',
       'Tüm verilerin silinecek ve uygulama yeniden başlayacak. Devam etmek istiyor musun?',
-      [
-        { text: 'Vazgeç', style: 'cancel' },
-        {
-          text: 'Sıfırla',
-          style: 'destructive',
-          onPress: async () => {
-            await resetAll();
-            router.replace('/onboarding');
-          },
-        },
-      ],
     );
+    if (!ok) return;
+    await resetAll();
+    router.replace('/onboarding');
   };
 
   return (

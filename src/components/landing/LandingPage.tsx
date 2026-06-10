@@ -13,18 +13,73 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
+  Platform,
+  Pressable,
+  PressableStateCallbackType,
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
+  ViewStyle,
 } from 'react-native';
 import { useUser } from '@/src/contexts/UserContext';
 import { APP_NAME, APP_TAGLINE } from '@/src/constants/strings';
 import { borderRadius, colors, gradients, shadows, spacing, typography } from '@/src/theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+// ─── Etkileşim yardımcıları (hover/press akıcılığı) ─────────────────────────
+
+/** Web'de transform/gölge/renk geçişlerini yumuşatır; native'de etkisizdir */
+const webTransition = Platform.OS === 'web'
+  ? ({
+      transitionProperty: 'transform, box-shadow, background-color, border-color, opacity',
+      transitionDuration: '180ms',
+    } as unknown as ViewStyle)
+  : undefined;
+
+/** RN tipi `hovered`'ı içermez ama react-native-web sağlar */
+function readPressState(state: PressableStateCallbackType): { hovered: boolean; pressed: boolean } {
+  const s = state as unknown as { hovered?: boolean; pressed: boolean };
+  return { hovered: !!s.hovered, pressed: s.pressed };
+}
+
+/** Hover'da yükselip parlayan, basışta yaylanan buton sarmalayıcısı */
+function LiftButton({
+  style,
+  hoverStyle,
+  onPress,
+  label,
+  children,
+}: {
+  style: StyleProp<ViewStyle>;
+  hoverStyle?: StyleProp<ViewStyle>;
+  onPress: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={(state) => {
+        const { hovered, pressed } = readPressState(state);
+        return [
+          style,
+          webTransition,
+          hovered && !pressed && styles.liftHovered,
+          hovered && !pressed && hoverStyle,
+          pressed && styles.liftPressed,
+        ];
+      }}
+    >
+      {children}
+    </Pressable>
+  );
+}
 
 const MAX_WIDTH = 1140;
 const BREAKPOINT_TABLET = 900;
@@ -38,7 +93,7 @@ const APP_FEATURES: { icon: IconName; title: string; desc: string }[] = [
   { icon: 'heart-outline',       title: 'Favoriler',              desc: 'Sevdiğin hareketleri kaydet, antrenmanında hızlıca ulaş.' },
   { icon: 'albums-outline',      title: 'Premium Programlar',     desc: 'Hedefine ve seviyene göre hazırlanan haftalık antrenman programları.' },
   { icon: 'trending-up-outline', title: 'Gelişim Takibi',         desc: 'Kilo, hacim, seri ve antrenman geçmişini tek ekrandan izle.' },
-  { icon: 'images-outline',      title: 'Önce / Sonra',           desc: 'Dönüşüm fotoğraflarınla değişimini belgelele ve karşılaştır.' },
+  { icon: 'images-outline',      title: 'Önce / Sonra',           desc: 'Dönüşüm fotoğraflarınla değişimini belgele ve karşılaştır.' },
   { icon: 'notifications-outline', title: 'Akıllı Bildirimler',   desc: 'Antrenman hatırlatmaları ve motivasyon mesajlarıyla ritmini koru.' },
   { icon: 'trophy-outline',      title: 'Başarı Rozetleri',       desc: 'Seriler, tamamlanan antrenmanlar ve güç artışıyla rozet kazan.' },
 ];
@@ -139,15 +194,14 @@ export function LandingPage() {
                 <NavLink label="İletişim"      onPress={() => scrollTo('contact')} />
               </>
             )}
-            <TouchableOpacity
+            <LiftButton
               style={styles.navCta}
+              hoverStyle={styles.glowHover}
               onPress={openApp}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Uygulamayı aç"
+              label="Uygulamayı aç"
             >
               <Text style={styles.navCtaLabel}>Uygulamayı Aç</Text>
-            </TouchableOpacity>
+            </LiftButton>
           </View>
         </View>
       </View>
@@ -177,26 +231,24 @@ export function LandingPage() {
                   tek yerden takip et.
                 </Text>
                 <View style={styles.heroBtns}>
-                  <TouchableOpacity
+                  <LiftButton
                     style={styles.primaryBtn}
+                    hoverStyle={styles.glowHover}
                     onPress={openApp}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityLabel="Uygulamayı keşfet"
+                    label="Uygulamayı keşfet"
                   >
                     <Ionicons name="rocket-outline" size={18} color={colors.background} />
                     <Text style={styles.primaryBtnLabel}>Uygulamayı Keşfet</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </LiftButton>
+                  <LiftButton
                     style={styles.secondaryBtn}
+                    hoverStyle={styles.secondaryHover}
                     onPress={() => scrollTo('premium')}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityLabel="Premium özelliklerini incele"
+                    label="Premium özelliklerini incele"
                   >
                     <Ionicons name="star-outline" size={18} color={colors.accent} />
                     <Text style={styles.secondaryBtnLabel}>Premium&apos;u İncele</Text>
-                  </TouchableOpacity>
+                  </LiftButton>
                 </View>
 
                 <View style={styles.heroStats}>
@@ -287,16 +339,15 @@ export function LandingPage() {
               {PREMIUM_FEATURES.map((f) => (
                 <TierRow key={f} label={f} tone="premium" />
               ))}
-              <TouchableOpacity
+              <LiftButton
                 style={[styles.primaryBtn, styles.tierCta]}
+                hoverStyle={styles.glowHover}
                 onPress={openApp}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Premium'u uygulamada incele"
+                label="Premium'u uygulamada incele"
               >
                 <Text style={styles.primaryBtnLabel}>Uygulamada İncele</Text>
                 <Ionicons name="arrow-forward" size={16} color={colors.background} />
-              </TouchableOpacity>
+              </LiftButton>
             </View>
           </View>
         </View>
@@ -391,16 +442,15 @@ export function LandingPage() {
             <Text style={styles.finalCtaDesc}>
               Egzersiz kütüphanesi ücretsiz — ilk hareketi öğrenmek bir dakika sürer.
             </Text>
-            <TouchableOpacity
+            <LiftButton
               style={styles.finalCtaBtn}
+              hoverStyle={styles.finalCtaHover}
               onPress={openApp}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Uygulamayı hemen aç"
+              label="Uygulamayı hemen aç"
             >
               <Text style={styles.finalCtaBtnLabel}>HEMEN BAŞLA</Text>
               <Ionicons name="arrow-forward" size={18} color={colors.accent} />
-            </TouchableOpacity>
+            </LiftButton>
           </View>
         </View>
 
@@ -427,9 +477,22 @@ export function LandingPage() {
 
 function NavLink({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} accessibilityRole="link">
-      <Text style={styles.navLink}>{label}</Text>
-    </TouchableOpacity>
+    <Pressable onPress={onPress} accessibilityRole="link" accessibilityLabel={label}>
+      {(state) => {
+        const { hovered, pressed } = readPressState(state);
+        return (
+          <Text
+            style={[
+              styles.navLink,
+              webTransition as object,
+              (hovered || pressed) && styles.navLinkHovered,
+            ]}
+          >
+            {label}
+          </Text>
+        );
+      }}
+    </Pressable>
   );
 }
 
@@ -500,13 +563,19 @@ function TierRow({ label, tone }: { label: string; tone: 'free' | 'premium' }) {
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <TouchableOpacity
-      style={styles.faqItem}
+    <Pressable
       onPress={() => setOpen((o) => !o)}
-      activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={question}
       accessibilityState={{ expanded: open }}
+      style={(state) => {
+        const { hovered } = readPressState(state);
+        return [
+          styles.faqItem,
+          webTransition,
+          (hovered || open) && styles.faqItemActive,
+        ];
+      }}
     >
       <View style={styles.faqHeader}>
         <Text style={styles.faqQuestion}>{question}</Text>
@@ -517,7 +586,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         />
       </View>
       {open && <Text style={styles.faqAnswer}>{answer}</Text>}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -526,6 +595,15 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
+
+  // Etkileşim durumları
+  liftHovered: { transform: [{ translateY: -2 }, { scale: 1.02 }] },
+  liftPressed: { transform: [{ scale: 0.97 }], opacity: 0.9 },
+  glowHover: { shadowOpacity: 0.55, shadowRadius: 20 },
+  secondaryHover: { backgroundColor: colors.accentMuted, shadowColor: colors.accent, shadowOpacity: 0.25, shadowRadius: 14 },
+  finalCtaHover: { shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 16 },
+  navLinkHovered: { color: colors.accent },
+  faqItemActive: { borderColor: colors.accent, backgroundColor: colors.surfaceSecondary },
 
   // Nav
   navBar: {

@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -23,6 +22,7 @@ import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme'
 import { Exercise, ExerciseLog, SetLog, WorkoutLog } from '@/src/types';
 import { formatSeconds } from '@/src/utils/formatters';
 import { hapticConfirm, hapticSuccess, hapticTap, hapticWarning } from '@/src/utils/haptics';
+import { confirmAction } from '@/src/utils/notify';
 
 type PlayerState = 'active' | 'resting' | 'done';
 
@@ -244,12 +244,13 @@ export default function WorkoutPlayerScreen() {
     setPlayerState('active');
   }, []);
 
-  const handleQuit = () => {
+  const handleQuit = async () => {
     hapticWarning();
-    Alert.alert('Antrenmandan çıkmak istiyor musun?', 'Kaydedilmemiş setlerin silinebilir.', [
-      { text: 'Devam Et', style: 'cancel' },
-      { text: 'Çık', style: 'destructive', onPress: () => router.back() },
-    ]);
+    const ok = await confirmAction(
+      'Antrenmandan çıkmak istiyor musun?',
+      'Kaydedilmemiş setlerin silinebilir.',
+    );
+    if (ok) router.back();
   };
 
   const handleSwapExercise = (alternative: Exercise) => {
@@ -344,7 +345,7 @@ export default function WorkoutPlayerScreen() {
           )}
           <TouchableOpacity style={styles.skipRestBtn} onPress={handleSkipRest} activeOpacity={0.85}>
             <Ionicons name="play-skip-forward" size={18} color={colors.background} />
-            <Text style={styles.skipRestLabel}>MOLAYı ATLA</Text>
+            <Text style={styles.skipRestLabel}>MOLAYI ATLA</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -533,7 +534,7 @@ export default function WorkoutPlayerScreen() {
             accessibilityLabel={isLastAction ? 'Antrenmanı bitir' : 'Seti tamamla'}
           >
             <Text style={styles.doneSetLabel}>
-              {isLastAction ? 'ANTREMANı BİTİR' : 'SET TAMAM'}
+              {isLastAction ? 'ANTRENMANI BİTİR' : 'SET TAMAM'}
             </Text>
             <Ionicons name="checkmark" size={20} color={colors.background} />
           </TouchableOpacity>
