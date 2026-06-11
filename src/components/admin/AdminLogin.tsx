@@ -87,11 +87,11 @@ export function AdminLogin() {
         {!isAdminApp && (
           <TouchableOpacity
             style={styles.backLink}
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => router.replace('/')}
             activeOpacity={0.8}
           >
             <Ionicons name="arrow-back-outline" size={14} color={colors.textSecondary} />
-            <Text style={styles.backLabel}>Uygulamaya dön</Text>
+            <Text style={styles.backLabel}>Siteye dön</Text>
           </TouchableOpacity>
         )}
       </View>

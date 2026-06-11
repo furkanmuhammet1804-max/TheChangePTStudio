@@ -1,16 +1,19 @@
 /**
- * The Change PT Studio — web landing page.
+ * The Change PT Studio — premium showroom / tanıtım sitesi.
+ *
+ * Web sitesi yalnızca markayı ve mobil uygulamayı TANITIR:
+ *  - Kayıt/giriş, premium satın alma, program takibi web'de YOKTUR;
+ *    bunlar yalnızca mobil uygulamadadır (web rotaları app/_layout.tsx'te kapalı).
+ *  - Tüm CTA'lar sayfa içi bölümlere veya indirme alanına kaydırır.
+ *  - Admin paneline buradan link VERİLMEZ — /admin yalnızca doğrudan adresle
+ *    ve admin login ile açılır.
  *
  * Mobil uygulamayla aynı marka dili: koyu premium arka plan, neon yeşil
- * accent, geniş hero, temiz kartlar. Görsel alanları stüdyo fotoğrafları
+ * accent, altın premium vurgusu. Görsel alanları stüdyo fotoğrafları
  * eklenene kadar premium gradient bloklar olarak durur.
- *
- * Sadece web'de render edilir (app/index.tsx); admin paneline buradan
- * link VERİLMEZ — /admin yalnızca doğrudan adresle ve login ile açılır.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
   Platform,
@@ -25,7 +28,6 @@ import {
   ViewStyle,
 } from 'react-native';
 import { BrandLogo } from '@/src/components/ui/BrandLogo';
-import { useUser } from '@/src/contexts/UserContext';
 import { APP_NAME, APP_TAGLINE } from '@/src/constants/strings';
 import { borderRadius, colors, gradients, shadows, spacing, typography } from '@/src/theme';
 
@@ -116,6 +118,23 @@ const PREMIUM_FEATURES = [
   'Önce / sonra fotoğraf alanı',
 ];
 
+const MUSCLE_GROUPS: { icon: IconName; label: string }[] = [
+  { icon: 'body-outline',      label: 'Göğüs' },
+  { icon: 'body-outline',      label: 'Sırt' },
+  { icon: 'body-outline',      label: 'Omuz' },
+  { icon: 'body-outline',      label: 'Kol' },
+  { icon: 'body-outline',      label: 'Bacak' },
+  { icon: 'body-outline',      label: 'Core' },
+  { icon: 'walk-outline',      label: 'Kardiyo' },
+  { icon: 'accessibility-outline', label: 'Mobilite' },
+];
+
+const PROGRESS_HIGHLIGHTS: { icon: IconName; value: string; label: string; desc: string }[] = [
+  { icon: 'flame-outline',       value: '12 gün',  label: 'SERİ',          desc: 'Üst üste antrenman günlerinle motivasyonunu koru.' },
+  { icon: 'calendar-outline',    value: '4/4',     label: 'HAFTALIK PLAN', desc: 'Haftalık hedefini tamamla, ritmini hiç bozma.' },
+  { icon: 'stats-chart-outline', value: '12.4 t',  label: 'TOPLAM HACİM',  desc: 'Kaldırdığın toplam ağırlığı set set izle.' },
+];
+
 const HOW_IT_WORKS: { icon: IconName; step: string; title: string; desc: string }[] = [
   { icon: 'flag-outline',        step: '01', title: 'Hedefini seç',        desc: 'Yağ yakımı, kas kazanımı veya form koruma — planın hedefine göre şekillenir.' },
   { icon: 'school-outline',      step: '02', title: 'Hareketleri öğren',   desc: 'Video anlatımlar, ipuçları ve yaygın hatalarla her hareketi doğru formda yap.' },
@@ -123,6 +142,10 @@ const HOW_IT_WORKS: { icon: IconName; step: string; title: string; desc: string 
 ];
 
 const FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: 'Uygulamayı nereden indirebilirim?',
+    a: 'The Change PT Studio çok yakında App Store ve Google Play\'de yayında olacak. Yayınlandığında bu sayfadaki indirme butonları aktif hale gelecek.',
+  },
   {
     q: 'Uygulama ücretsiz mi?',
     a: 'Evet. Egzersiz kütüphanesi, hareket açıklamaları, filtreler ve favoriler tamamen ücretsizdir. Kişisel program, günlük plan ve gelişim takibi Premium üyelikle açılır.',
@@ -132,16 +155,12 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
     a: 'Hedefine göre hazırlanan kişisel program, günlük antrenman planı, set set workout log, detaylı gelişim takibi, başarı rozetleri ve önce/sonra fotoğraf alanı Premium üyelere özeldir.',
   },
   {
-    q: 'Egzersiz videoları nasıl ekleniyor?',
-    a: 'Tüm hareket videoları ve görselleri stüdyo ekibi tarafından yönetim panelinden yüklenir ve uygulamaya anında yansır. İçerik kütüphanesi düzenli olarak genişler.',
-  },
-  {
-    q: 'Yönetim paneli ne işe yarıyor?',
-    a: 'Yönetim paneli işletme tarafına aittir: üyelikler, programlar, egzersiz içerikleri ve bildirimler buradan yönetilir. Son kullanıcı uygulaması bu panelden tamamen ayrıdır.',
+    q: 'Üyelik ve premium işlemleri nereden yapılıyor?',
+    a: 'Kayıt, giriş ve premium üyelik işlemlerinin tamamı mobil uygulama içindedir. Web sitesi yalnızca tanıtım amaçlıdır.',
   },
   {
     q: 'Verilerim güvende mi?',
-    a: 'Antrenman geçmişin, ölçümlerin ve fotoğrafların cihazında saklanır; üçüncü taraflarla paylaşılmaz. Hesap ve abonelik işlemleri güvenli altyapı üzerinden yürütülür.',
+    a: 'Antrenman geçmişin, ölçümlerin ve fotoğrafların hesabına özel ve güvenli altyapıda saklanır; üçüncü taraflarla paylaşılmaz.',
   },
 ];
 
@@ -151,13 +170,22 @@ const CONTACT_ITEMS: { icon: IconName; label: string; value: string }[] = [
   { icon: 'logo-whatsapp',         label: 'WhatsApp',  value: '+90 (5xx) xxx xx xx' },
 ];
 
+const NAV_ITEMS: { key: string; label: string }[] = [
+  { key: 'features', label: 'Özellikler' },
+  { key: 'premium',  label: 'Premium' },
+  { key: 'library',  label: 'Egzersizler' },
+  { key: 'progress', label: 'Gelişim' },
+  { key: 'faq',      label: 'SSS' },
+  { key: 'contact',  label: 'İletişim' },
+];
+
 // ─── Sayfa ───────────────────────────────────────────────────────────────────
 
 export function LandingPage() {
   const { width } = useWindowDimensions();
-  const { isOnboardingComplete } = useUser();
   const isMobile = width < BREAKPOINT_MOBILE;
   const isTablet = width < BREAKPOINT_TABLET;
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
   const sectionY = useRef<Record<string, number>>({});
@@ -167,11 +195,8 @@ export function LandingPage() {
   };
 
   const scrollTo = (key: string) => {
+    setMenuOpen(false);
     scrollRef.current?.scrollTo({ y: (sectionY.current[key] ?? 0) - 24, animated: true });
-  };
-
-  const openApp = () => {
-    router.push(isOnboardingComplete ? '/(tabs)' : '/onboarding');
   };
 
   return (
@@ -183,25 +208,55 @@ export function LandingPage() {
             <BrandLogo height={isMobile ? 28 : 34} />
           </View>
           <View style={styles.navLinks}>
-            {!isTablet && (
-              <>
-                <NavLink label="Özellikler"    onPress={() => scrollTo('features')} />
-                <NavLink label="Premium"       onPress={() => scrollTo('premium')} />
-                <NavLink label="Nasıl Çalışır" onPress={() => scrollTo('how')} />
-                <NavLink label="SSS"           onPress={() => scrollTo('faq')} />
-                <NavLink label="İletişim"      onPress={() => scrollTo('contact')} />
-              </>
-            )}
+            {!isTablet &&
+              NAV_ITEMS.map((item) => (
+                <NavLink key={item.key} label={item.label} onPress={() => scrollTo(item.key)} />
+              ))}
             <LiftButton
               style={styles.navCta}
               hoverStyle={styles.glowHover}
-              onPress={openApp}
-              label="Uygulamayı aç"
+              onPress={() => scrollTo('download')}
+              label="Uygulamayı indir"
             >
-              <Text style={styles.navCtaLabel}>Uygulamayı Aç</Text>
+              <Text style={styles.navCtaLabel}>{isMobile ? 'İndir' : 'Uygulamayı İndir'}</Text>
             </LiftButton>
+            {isTablet && (
+              <Pressable
+                onPress={() => setMenuOpen((o) => !o)}
+                accessibilityRole="button"
+                accessibilityLabel={menuOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+                style={styles.menuBtn}
+              >
+                <Ionicons
+                  name={menuOpen ? 'close' : 'menu'}
+                  size={24}
+                  color={menuOpen ? colors.accent : colors.text}
+                />
+              </Pressable>
+            )}
           </View>
         </View>
+
+        {/* Mobil hamburger menü */}
+        {isTablet && menuOpen && (
+          <View style={[styles.mobileMenu, { maxWidth: MAX_WIDTH }]}>
+            {NAV_ITEMS.map((item) => (
+              <Pressable
+                key={item.key}
+                onPress={() => scrollTo(item.key)}
+                accessibilityRole="link"
+                accessibilityLabel={item.label}
+                style={(state) => [
+                  styles.mobileMenuItem,
+                  readPressState(state).pressed && styles.mobileMenuItemPressed,
+                ]}
+              >
+                <Text style={styles.mobileMenuLabel}>{item.label}</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </Pressable>
+            ))}
+          </View>
+        )}
       </View>
 
       <ScrollView ref={scrollRef} style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -221,18 +276,18 @@ export function LandingPage() {
                   <Text style={styles.heroEyebrowText}>KİŞİSEL ANTRENMAN UYGULAMASI</Text>
                 </View>
                 {/* Marka hissi: hero'da büyük resmi logo */}
-                <BrandLogo height={isMobile ? 72 : 110} />
+                <BrandLogo height={isMobile ? 64 : 110} />
 
                 <Text style={styles.heroTagline}>{APP_TAGLINE}</Text>
                 <Text style={styles.heroDesc}>
                   Hedefine göre antrenman yap, hareketleri doğru formda öğren ve gelişimini
-                  tek yerden takip et.
+                  tek yerden takip et — hepsi cebindeki uygulamada.
                 </Text>
                 <View style={styles.heroBtns}>
                   <LiftButton
                     style={styles.primaryBtn}
                     hoverStyle={styles.glowHover}
-                    onPress={openApp}
+                    onPress={() => scrollTo('features')}
                     label="Uygulamayı keşfet"
                   >
                     <Ionicons name="rocket-outline" size={18} color={colors.background} />
@@ -249,6 +304,12 @@ export function LandingPage() {
                   </LiftButton>
                 </View>
 
+                {/* Mağaza rozetleri (placeholder — yayınla birlikte aktifleşir) */}
+                <View style={styles.storeBadges}>
+                  <StoreBadge store="apple" />
+                  <StoreBadge store="google" />
+                </View>
+
                 <View style={styles.heroStats}>
                   <HeroStat value="34+" label="Hareket" />
                   <View style={styles.heroStatDivider} />
@@ -263,7 +324,7 @@ export function LandingPage() {
                 icon="phone-portrait-outline"
                 label="UYGULAMA GÖRSELİ"
                 style={[styles.heroMedia, isTablet && styles.heroMediaStacked]}
-                tall
+                tall={!isMobile}
               />
             </View>
           </View>
@@ -300,7 +361,7 @@ export function LandingPage() {
           <SectionHeading
             eyebrow="ÜYELİK"
             title="Ücretsiz başla, hazır olunca yüksel"
-            desc="Kütüphane herkese açık. Kişisel programın ve gelişim takibin Premium ile açılır."
+            desc="Kütüphane herkese açık. Kişisel programın ve gelişim takibin Premium ile açılır. Tüm üyelik işlemleri mobil uygulama içindedir."
           />
           <View style={[styles.tierGrid, isTablet && styles.tierGridStacked]}>
             {/* Ücretsiz */}
@@ -340,18 +401,81 @@ export function LandingPage() {
               <LiftButton
                 style={[styles.primaryBtn, styles.tierCta]}
                 hoverStyle={styles.glowHover}
-                onPress={openApp}
-                label="Premium'u uygulamada incele"
+                onPress={() => scrollTo('download')}
+                label="Uygulamayı indir"
               >
-                <Text style={styles.primaryBtnLabel}>Uygulamada İncele</Text>
+                <Text style={styles.primaryBtnLabel}>Uygulamada Keşfet</Text>
                 <Ionicons name="arrow-forward" size={16} color={colors.background} />
               </LiftButton>
             </View>
           </View>
         </View>
 
+        {/* ── Egzersiz kütüphanesi tanıtımı ── */}
+        <View style={[styles.section, { maxWidth: MAX_WIDTH }]} onLayout={registerSection('library')}>
+          <SectionHeading
+            eyebrow="EGZERSİZ KÜTÜPHANESİ"
+            title="Her hareket, doğru formuyla"
+            desc="34+ hareket; video anlatım, ipuçları, yaygın hatalar ve alternatifleriyle birlikte. Kas grubuna, ekipmana ve antrenman ortamına göre filtrele."
+          />
+          <View style={[styles.libraryGrid, isTablet && styles.libraryGridStacked]}>
+            <View style={styles.libraryInfo}>
+              <View style={styles.muscleChips}>
+                {MUSCLE_GROUPS.map((m) => (
+                  <View key={m.label} style={styles.muscleChip}>
+                    <Ionicons name={m.icon} size={14} color={colors.accent} />
+                    <Text style={styles.muscleChipLabel}>{m.label}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.libraryPoints}>
+                <TierRow label="Adım adım hareket anlatımı" tone="free" />
+                <TierRow label="Video ve görsel destekli öğrenme" tone="free" />
+                <TierRow label="Yaygın hatalar ve düzeltmeleri" tone="free" />
+                <TierRow label="Evde, salonda veya dışarıda alternatifler" tone="free" />
+              </View>
+              <LiftButton
+                style={[styles.secondaryBtn, styles.libraryCta]}
+                hoverStyle={styles.secondaryHover}
+                onPress={() => scrollTo('download')}
+                label="Egzersizleri incele"
+              >
+                <Ionicons name="barbell-outline" size={18} color={colors.accent} />
+                <Text style={styles.secondaryBtnLabel}>Egzersizleri İncele</Text>
+              </LiftButton>
+            </View>
+            <MediaFrame
+              icon="barbell-outline"
+              label="EGZERSİZ GÖRSELİ"
+              style={[styles.libraryMedia, isTablet && styles.heroMediaStacked]}
+            />
+          </View>
+        </View>
+
+        {/* ── Gelişim takibi tanıtımı ── */}
+        <View style={[styles.section, { maxWidth: MAX_WIDTH }]} onLayout={registerSection('progress')}>
+          <SectionHeading
+            eyebrow="GELİŞİM TAKİBİ"
+            title="Değişimin görünür olsun"
+            desc="Her antrenman kaydedilir: set, tekrar, ağırlık, süre ve hacim. Serin, haftalık ritmin ve önce/sonra fotoğraflarınla ilerlemen tek ekranda."
+          />
+          <View style={[styles.progressGrid, isTablet && styles.stepsGridStacked]}>
+            {PROGRESS_HIGHLIGHTS.map((p) => (
+              <View key={p.label} style={styles.progressCard}>
+                <View style={styles.featureIcon}>
+                  <Ionicons name={p.icon} size={22} color={colors.accent} />
+                </View>
+                <Text style={styles.progressValue}>{p.value}</Text>
+                <Text style={styles.progressLabel}>{p.label}</Text>
+                <Text style={styles.featureDesc}>{p.desc}</Text>
+              </View>
+            ))}
+          </View>
+          <MediaFrame icon="trending-up-outline" label="GELİŞİM EKRANI GÖRSELİ" style={styles.wideMedia} />
+        </View>
+
         {/* ── Nasıl çalışır ── */}
-        <View style={[styles.section, { maxWidth: MAX_WIDTH }]} onLayout={registerSection('how')}>
+        <View style={[styles.section, { maxWidth: MAX_WIDTH }]}>
           <SectionHeading
             eyebrow="NASIL ÇALIŞIR"
             title="Üç adımda değişim"
@@ -368,32 +492,6 @@ export function LandingPage() {
                 <Text style={styles.stepDesc}>{s.desc}</Text>
               </View>
             ))}
-          </View>
-
-          {/* Geniş görsel alanı */}
-          <MediaFrame icon="fitness-outline" label="STÜDYO GÖRSELİ" style={styles.wideMedia} />
-        </View>
-
-        {/* ── İşletme tarafı (sade) ── */}
-        <View style={[styles.section, { maxWidth: MAX_WIDTH }]}>
-          <View style={styles.businessCard}>
-            <LinearGradient
-              colors={gradients.surfaceRaised}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            <View style={styles.businessIcon}>
-              <Ionicons name="shield-checkmark-outline" size={24} color={colors.accent} />
-            </View>
-            <View style={styles.businessInfo}>
-              <Text style={styles.businessTitle}>Profesyonel yönetim altyapısı</Text>
-              <Text style={styles.businessDesc}>
-                Üyelikler, programlar, egzersiz içerikleri ve bildirimler; işletmeye özel
-                yönetim merkezi üzerinden uçtan uca yönetilir. Stüdyonun eklediği her içerik
-                uygulamaya anında yansır.
-              </Text>
-            </View>
           </View>
         </View>
 
@@ -427,8 +525,8 @@ export function LandingPage() {
           </View>
         </View>
 
-        {/* ── Kapanış CTA ── */}
-        <View style={[styles.section, { maxWidth: MAX_WIDTH }]}>
+        {/* ── İndirme / kapanış CTA ── */}
+        <View style={[styles.section, { maxWidth: MAX_WIDTH }]} onLayout={registerSection('download')}>
           <View style={styles.finalCta}>
             <LinearGradient
               colors={gradients.accent}
@@ -438,16 +536,20 @@ export function LandingPage() {
             />
             <Text style={styles.finalCtaTitle}>Değişim bugün başlar.</Text>
             <Text style={styles.finalCtaDesc}>
-              Egzersiz kütüphanesi ücretsiz — ilk hareketi öğrenmek bir dakika sürer.
+              The Change PT Studio çok yakında App Store ve Google Play&apos;de.
             </Text>
+            <View style={styles.finalBadges}>
+              <StoreBadge store="apple" onDark />
+              <StoreBadge store="google" onDark />
+            </View>
             <LiftButton
               style={styles.finalCtaBtn}
               hoverStyle={styles.finalCtaHover}
-              onPress={openApp}
-              label="Uygulamayı hemen aç"
+              onPress={() => scrollTo('contact')}
+              label="İletişime geç"
             >
-              <Text style={styles.finalCtaBtnLabel}>HEMEN BAŞLA</Text>
-              <Ionicons name="arrow-forward" size={18} color={colors.accent} />
+              <Text style={styles.finalCtaBtnLabel}>İLETİŞİME GEÇ</Text>
+              <Ionicons name="chatbubbles-outline" size={18} color={colors.accent} />
             </LiftButton>
           </View>
         </View>
@@ -491,6 +593,25 @@ function NavLink({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
+/** Mağaza rozeti placeholder'ı — uygulama yayınlanınca gerçek linke bağlanır */
+function StoreBadge({ store, onDark }: { store: 'apple' | 'google'; onDark?: boolean }) {
+  return (
+    <View style={[styles.storeBadge, onDark && styles.storeBadgeOnDark]}>
+      <Ionicons
+        name={store === 'apple' ? 'logo-apple' : 'logo-google-playstore'}
+        size={22}
+        color={onDark ? colors.background : colors.text}
+      />
+      <View>
+        <Text style={[styles.storeBadgeTop, onDark && styles.storeBadgeTopOnDark]}>YAKINDA</Text>
+        <Text style={[styles.storeBadgeName, onDark && styles.storeBadgeNameOnDark]}>
+          {store === 'apple' ? 'App Store' : 'Google Play'}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 function HeroStat({ value, label }: { value: string; label: string }) {
   return (
     <View style={styles.heroStat}>
@@ -516,7 +637,7 @@ function MediaFrame({
 }: {
   icon: IconName;
   label: string;
-  style?: object;
+  style?: StyleProp<ViewStyle>;
   tall?: boolean;
 }) {
   return (
@@ -617,17 +738,51 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 4,
     gap: spacing.md,
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
   navLinks: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  navLink: { ...typography.bodySmall, color: colors.textSecondary, fontWeight: '600' },
+  navLink: { ...typography.bodySmall, color: colors.textSecondary, fontWeight: '600', paddingVertical: spacing.sm },
   navCta: {
     backgroundColor: colors.accent,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.sm + 1,
+    paddingVertical: spacing.sm + 3,
+    minHeight: 44,
+    justifyContent: 'center',
     ...shadows.accent,
   },
   navCtaLabel: { ...typography.bodySmall, color: colors.background, fontWeight: '800' },
+  menuBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+
+  // Hamburger menü
+  mobileMenu: {
+    width: '100%',
+    alignSelf: 'center',
+    paddingBottom: spacing.sm,
+    gap: 2,
+  },
+  mobileMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 6,
+    minHeight: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  mobileMenuItemPressed: { backgroundColor: colors.surfaceSecondary, borderColor: colors.accent },
+  mobileMenuLabel: { ...typography.bodyMedium, color: colors.text, fontWeight: '600' },
 
   // Ortak section
   section: {
@@ -662,6 +817,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md - 2,
+    minHeight: 48,
     ...shadows.accent,
   },
   primaryBtnLabel: { ...typography.bodyMedium, color: colors.background, fontWeight: '800' },
@@ -676,8 +832,34 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md - 2,
+    minHeight: 48,
   },
   secondaryBtnLabel: { ...typography.bodyMedium, color: colors.accent, fontWeight: '800' },
+
+  // Mağaza rozetleri
+  storeBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
+  storeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 52,
+    opacity: 0.92,
+  },
+  storeBadgeOnDark: {
+    backgroundColor: 'rgba(13,13,13,0.85)',
+    borderColor: 'rgba(13,13,13,0.9)',
+  },
+  storeBadgeTop: { ...typography.caption, color: colors.textMuted, letterSpacing: 1.5, fontSize: 9 },
+  storeBadgeTopOnDark: { color: colors.textSecondary },
+  storeBadgeName: { ...typography.bodyMedium, color: colors.text, fontWeight: '800' },
+  storeBadgeNameOnDark: { color: colors.text },
+
   heroStats: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -784,6 +966,42 @@ const styles = StyleSheet.create({
   tierRowLabel: { ...typography.bodyMedium, color: colors.text, flex: 1 },
   tierCta: { marginTop: spacing.md, alignSelf: 'flex-start' },
 
+  // Egzersiz kütüphanesi
+  libraryGrid: { flexDirection: 'row', gap: spacing.xl, alignItems: 'center' },
+  libraryGridStacked: { flexDirection: 'column', alignItems: 'stretch' },
+  libraryInfo: { flex: 1, gap: spacing.md },
+  libraryMedia: { flex: 1, maxWidth: 480, height: 320 },
+  libraryCta: { alignSelf: 'flex-start' },
+  muscleChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  muscleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 4,
+  },
+  muscleChipLabel: { ...typography.bodySmall, color: colors.text, fontWeight: '600' },
+  libraryPoints: { gap: spacing.sm },
+
+  // Gelişim takibi
+  progressGrid: { flexDirection: 'row', gap: spacing.md },
+  progressCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...shadows.sm,
+  },
+  progressValue: { ...typography.h1, color: colors.accent },
+  progressLabel: { ...typography.caption, color: colors.textSecondary, letterSpacing: 1.5, fontWeight: '700' },
+
   // Adımlar
   stepsGrid: { flexDirection: 'row', gap: spacing.md },
   stepsGridStacked: { flexDirection: 'column' },
@@ -808,30 +1026,6 @@ const styles = StyleSheet.create({
   },
   stepTitle: { ...typography.h3, color: colors.text },
   stepDesc: { ...typography.bodySmall, color: colors.textSecondary, lineHeight: 20 },
-
-  // İşletme
-  businessCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    overflow: 'hidden',
-    flexWrap: 'wrap',
-  },
-  businessIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.accentMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  businessInfo: { flex: 1, minWidth: 260, gap: spacing.xs },
-  businessTitle: { ...typography.h3, color: colors.text },
-  businessDesc: { ...typography.bodySmall, color: colors.textSecondary, lineHeight: 20 },
 
   // SSS
   faqList: { gap: spacing.sm },
@@ -872,7 +1066,7 @@ const styles = StyleSheet.create({
   contactLabel: { ...typography.label, color: colors.textSecondary, letterSpacing: 1 },
   contactValue: { ...typography.bodyMedium, color: colors.text, fontWeight: '600' },
 
-  // Kapanış CTA
+  // İndirme / kapanış CTA
   finalCta: {
     borderRadius: borderRadius.xl,
     padding: spacing.xl,
@@ -883,6 +1077,13 @@ const styles = StyleSheet.create({
   },
   finalCtaTitle: { ...typography.h1, color: colors.background, textAlign: 'center' },
   finalCtaDesc: { ...typography.body, color: colors.background, opacity: 0.8, textAlign: 'center' },
+  finalBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
   finalCtaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -891,6 +1092,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md - 2,
+    minHeight: 48,
     marginTop: spacing.sm,
   },
   finalCtaBtnLabel: { ...typography.label, color: colors.accent, fontWeight: '800', letterSpacing: 1 },

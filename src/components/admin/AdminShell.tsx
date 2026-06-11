@@ -114,11 +114,11 @@ function Sidebar({ pathname }: { pathname: string }) {
         {!isAdminApp && (
           <TouchableOpacity
             style={styles.backToApp}
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => router.replace('/')}
             activeOpacity={0.8}
           >
-            <Ionicons name="phone-portrait-outline" size={16} color={colors.textSecondary} />
-            <Text style={styles.backToAppLabel}>Uygulamaya Dön</Text>
+            <Ionicons name="globe-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.backToAppLabel}>Siteye Dön</Text>
           </TouchableOpacity>
         )}
         <Text style={styles.versionText}>Admin Panel v1.0</Text>
