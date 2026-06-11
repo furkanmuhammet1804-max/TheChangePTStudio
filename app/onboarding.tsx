@@ -67,7 +67,7 @@ export default function OnboardingScreen() {
 
       <View style={[styles.skipRow, { paddingTop: insets.top + spacing.sm }]}>
         {/* Marka kimliği — ilk slaytta küçük ve premium */}
-        {activeIndex === 0 ? <BrandLogo height={22} /> : <View />}
+        {activeIndex === 0 ? <BrandLogo height={26} /> : <View />}
         {!isLast ? (
           <TouchableOpacity onPress={handleStart} style={styles.skipBtn} hitSlop={12}>
             <Text style={styles.skipText}>Atla</Text>

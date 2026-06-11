@@ -16,10 +16,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormField } from '@/src/components/admin/forms';
 import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { isAdminApp } from '@/src/lib/appVariant';
-import { loginAdmin } from '@/src/services/adminAuth';
+import { isRemoteAdminAuth, loginAdmin } from '@/src/services/adminAuth';
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 
 export function AdminLogin() {
+  const remote = isRemoteAdminAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
@@ -31,22 +32,29 @@ export function AdminLogin() {
     setError('');
     const ok = await loginAdmin(username, password);
     setBusy(false);
-    if (!ok) setError('Kullanıcı adı veya şifre hatalı.');
+    if (!ok) {
+      setError(
+        remote
+          ? 'Giriş başarısız. E-posta/şifre hatalı veya hesabın yönetici yetkisi yok.'
+          : 'Kullanıcı adı veya şifre hatalı.',
+      );
+    }
   };
 
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.card}>
         <View style={styles.brand}>
-          <BrandLogo height={48} />
+          <BrandLogo width={236} />
+          <Text style={styles.brandTitle}>The Change Admin</Text>
           <Text style={styles.brandSub}>YÖNETİM PANELİ</Text>
         </View>
 
         <FormField
-          label="Kullanıcı Adı"
+          label={remote ? 'E-posta' : 'Kullanıcı Adı'}
           value={username}
           onChangeText={setUsername}
-          placeholder="thechange"
+          placeholder={remote ? 'admin@thechangept.com' : 'thechange'}
           autoCapitalize="none"
         />
         <FormField
@@ -115,8 +123,15 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     ...shadows.md,
   },
-  brand: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  brandSub: { ...typography.caption, color: colors.accent, letterSpacing: 2 },
+  brand: { alignItems: 'center', gap: spacing.xs + 2, marginBottom: spacing.md, paddingTop: spacing.sm },
+  brandTitle: {
+    ...typography.h4,
+    color: colors.text,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    marginTop: spacing.sm,
+  },
+  brandSub: { ...typography.caption, color: colors.accent, letterSpacing: 2.4, fontWeight: '700' },
 
   errorBox: {
     flexDirection: 'row',

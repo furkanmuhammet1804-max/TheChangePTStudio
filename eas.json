@@ -1,28 +1,60 @@
 {
   "cli": {
-    "version": ">= 5.0.0"
+    "version": ">= 5.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
-    "production": {
-      "autoIncrement": true
+    "base": {
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-medium"
+      }
     },
+
+    "customer-android-production": {
+      "extends": "base",
+      "env": { "APP_VARIANT": "customer" },
+      "android": { "buildType": "app-bundle" }
+    },
+    "customer-ios-production": {
+      "extends": "base",
+      "env": { "APP_VARIANT": "customer" }
+    },
+    "admin-android-production": {
+      "extends": "base",
+      "env": { "APP_VARIANT": "admin" },
+      "android": { "buildType": "app-bundle" }
+    },
+    "admin-ios-production": {
+      "extends": "base",
+      "env": { "APP_VARIANT": "admin" }
+    },
+
     "customer-apk": {
+      "env": { "APP_VARIANT": "customer" },
+      "android": { "buildType": "apk" }
+    },
+    "admin-apk": {
+      "env": { "APP_VARIANT": "admin" },
+      "android": { "buildType": "apk" }
+    },
+    "ios-simulator": {
+      "ios": { "simulator": true }
+    }
+  },
+  "submit": {
+    "customer": {
+      "ios": {},
       "android": {
-        "buildType": "apk"
+        "serviceAccountKeyPath": "./store/google-play-service-account.json",
+        "track": "internal"
       }
     },
     "admin": {
-      "extends": "production",
-      "env": {
-        "APP_VARIANT": "admin"
-      }
-    },
-    "admin-apk": {
-      "env": {
-        "APP_VARIANT": "admin"
-      },
+      "ios": {},
       "android": {
-        "buildType": "apk"
+        "serviceAccountKeyPath": "./store/google-play-service-account.json",
+        "track": "internal"
       }
     }
   }

@@ -1,14 +1,16 @@
 /**
  * Egzersiz medya seçme/yükleme servisi.
  *
- * Bugün: cihazdan/bilgisayardan dosya seçilir (expo-image-picker — web'de
- * dosya inputuna, mobilde galeriye düşer) ve YEREL uri olarak saklanır.
- * Yarın: storage (Firebase Storage / Supabase Storage / S3) bağlandığında
- * sadece `uploadMediaPlaceholder` gövdesi gerçek yüklemeye dönüşür ve uzak
- * URL döner; form/ekran kodu değişmez.
+ * Dosya cihazdan/bilgisayardan seçilir (expo-image-picker — web'de dosya
+ * inputuna, mobilde galeriye düşer).
+ *
+ * CANLI modda (.env'de Supabase tanımlı): dosya `exercise-media` bucket'ına
+ * yüklenir ve kalıcı public URL döner — müşteri uygulaması medyayı bu URL'den
+ * gösterir. YEREL modda: yerel uri aynen saklanır (test).
  */
 import * as ImagePicker from 'expo-image-picker';
 import { getMediaStatus } from '@/src/lib/media';
+import { getSupabase, isSupabaseConfigured } from '@/src/lib/supabase';
 
 export { getMediaStatus };
 
@@ -90,14 +92,33 @@ export function pickForSlot(slot: MediaSlot): Promise<PickResult> {
   }
 }
 
-// ─── Yükleme (placeholder) ───────────────────────────────────────────────────
+// ─── Yükleme ─────────────────────────────────────────────────────────────────
 
 /**
- * Gerçek storage bağlanana kadar yerel uri'yi aynen döner.
- * Storage bağlandığında: dosyayı yükle → kalıcı uzak URL döndür.
+ * Canlı modda dosyayı Supabase Storage'a (exercise-media) yükler ve kalıcı
+ * public URL döner. Yerel modda yerel uri'yi aynen döner.
  */
 export async function uploadMediaPlaceholder(media: PickedMedia): Promise<string> {
-  return media.uri;
+  if (!isSupabaseConfigured()) return media.uri;
+
+  const supabase = getSupabase();
+  const response = await fetch(media.uri);
+  const blob = await response.blob();
+
+  const extFromName = (media.fileName ?? '').split('.').pop()?.toLowerCase();
+  const extFromMime = (media.mimeType ?? blob.type).split('/')[1];
+  const ext = (extFromName || extFromMime || 'bin').replace('jpeg', 'jpg');
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('exercise-media')
+    .upload(path, blob, { contentType: media.mimeType ?? blob.type ?? undefined });
+  if (error) {
+    console.warn('[mediaUpload] Storage yüklemesi başarısız, yerel uri kullanılıyor:', error);
+    return media.uri;
+  }
+
+  return supabase.storage.from('exercise-media').getPublicUrl(path).data.publicUrl;
 }
 
 // ─── Görüntüleme yardımcıları ────────────────────────────────────────────────

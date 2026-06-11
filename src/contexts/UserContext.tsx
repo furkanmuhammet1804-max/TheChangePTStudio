@@ -27,6 +27,19 @@ import {
   subscribeAppStore,
   syncDeviceUser,
 } from '@/src/services/appStore';
+import { initAuth, useAuth } from '@/src/services/authService';
+import {
+  abandonProgramRemote,
+  advanceProgramRemote,
+  deleteTransformationPhotoRemote,
+  insertWorkoutLogRemote,
+  loadUserData,
+  saveProfileRemote,
+  setFavoriteRemote,
+  startProgramRemote,
+  subscribeUserRealtime,
+  uploadTransformationPhoto,
+} from '@/src/services/userDataService';
 import { hapticSuccess } from '@/src/utils/haptics';
 
 // ─── Storage keys ──────────────────────────────────────────────────────────
@@ -142,7 +155,51 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [transformationPhotos, setTransformationPhotos] = useState<Partial<Record<'before' | 'after', TransformationPhoto>>>({});
   const [loading,              setLoading]              = useState(true);
 
+  // Canlı mod: oturum açan gerçek hesap (yerel modda account daima null)
+  const auth = useAuth();
+  const remoteUserId = auth.mode === 'remote' ? auth.account?.id ?? null : null;
+
   useEffect(() => { loadAll(); }, []);
+  useEffect(() => { void initAuth(); }, []);
+
+  // ── Canlı mod: hesap verisini Supabase'ten yükle + realtime izle ─────────
+  const applyRemoteData = useCallback(async (userId: string) => {
+    try {
+      const data = await loadUserData(userId);
+      if (data.profile) {
+        setProfile(data.profile);
+        setIsOnboardingComplete(true);
+      }
+      setMembershipState(data.membership);
+      setFavoriteExerciseIds(data.favoriteExerciseIds);
+      if (data.workoutLogs.length > 0) setWorkoutLogs(data.workoutLogs);
+      if (Object.keys(data.transformationPhotos).length > 0) {
+        setTransformationPhotos(data.transformationPhotos);
+      }
+      setAssignedProgramIds(data.assignedProgramIds);
+      if (data.activeProgram) {
+        // Tamamlanan oturum anahtarları sunucuda tutulmaz; loglardan türetilir
+        const completedSessions = data.workoutLogs
+          .filter(
+            (l) =>
+              l.programId === data.activeProgram!.programId &&
+              l.weekNumber != null &&
+              l.dayIndex != null,
+          )
+          .map((l) => `W${l.weekNumber}D${l.dayIndex}`);
+        setActiveProgram({ ...data.activeProgram, completedSessions });
+      }
+    } catch (err) {
+      console.warn('[UserContext] Hesap verisi yüklenemedi:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!remoteUserId) return;
+    void applyRemoteData(remoteUserId);
+    // Admin premium yaptı / program atadı → anında bu cihaza yansır
+    return subscribeUserRealtime(remoteUserId, () => void applyRemoteData(remoteUserId));
+  }, [remoteUserId, applyRemoteData]);
 
   async function loadAll() {
     try {
@@ -200,7 +257,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const saveProfile = useCallback(async (p: UserProfile) => {
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(p));
     setProfile(p);
-  }, []);
+    if (remoteUserId) saveProfileRemote(remoteUserId, p);
+  }, [remoteUserId]);
 
   const completeOnboarding = useCallback(async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
@@ -215,12 +273,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // ── Favorite exercises ────────────────────────────────────────────────────
   const toggleFavoriteExercise = useCallback(async (exerciseId: string) => {
-    const updated = favoriteExerciseIds.includes(exerciseId)
-      ? favoriteExerciseIds.filter((id) => id !== exerciseId)
-      : [...favoriteExerciseIds, exerciseId];
+    const adding = !favoriteExerciseIds.includes(exerciseId);
+    const updated = adding
+      ? [...favoriteExerciseIds, exerciseId]
+      : favoriteExerciseIds.filter((id) => id !== exerciseId);
     await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
     setFavoriteExerciseIds(updated);
-  }, [favoriteExerciseIds]);
+    if (remoteUserId) setFavoriteRemote(remoteUserId, exerciseId, adding);
+  }, [favoriteExerciseIds, remoteUserId]);
 
   const isFavoriteExercise = useCallback(
     (exerciseId: string) => favoriteExerciseIds.includes(exerciseId),
@@ -259,11 +319,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         uri,
         takenAt: new Date().toISOString(),
       };
+      if (remoteUserId) {
+        try {
+          // Storage'a yükle; gösterim için kalıcı (imzalı) URL kullan
+          photo.uri = await uploadTransformationPhoto(remoteUserId, photo);
+        } catch (err) {
+          console.warn('[UserContext] Fotoğraf yüklenemedi (yerel saklanıyor):', err);
+        }
+      }
       const updated = { ...transformationPhotos, [type]: photo };
       await AsyncStorage.setItem(TRANSFORM_KEY, JSON.stringify(updated));
       setTransformationPhotos(updated);
     },
-    [transformationPhotos],
+    [transformationPhotos, remoteUserId],
   );
 
   const removeTransformationPhoto = useCallback(
@@ -272,8 +340,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       delete updated[type];
       await AsyncStorage.setItem(TRANSFORM_KEY, JSON.stringify(updated));
       setTransformationPhotos(updated);
+      if (remoteUserId) deleteTransformationPhotoRemote(remoteUserId, type);
     },
-    [transformationPhotos],
+    [transformationPhotos, remoteUserId],
   );
 
   // ── Program tracking ──────────────────────────────────────────────────────
@@ -287,8 +356,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     await AsyncStorage.setItem(ACTIVE_PROG_KEY, JSON.stringify(ap));
     setActiveProgram(ap);
+    if (remoteUserId) startProgramRemote(remoteUserId, programId);
     hapticSuccess(); // program başlatıldı
-  }, []);
+  }, [remoteUserId]);
 
   const advanceProgramDay = useCallback(async (_log: WorkoutLog) => {
     if (!activeProgram) return;
@@ -318,6 +388,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       };
       await AsyncStorage.setItem(ACTIVE_PROG_KEY, JSON.stringify(updated));
       setActiveProgram(updated);
+      if (remoteUserId) advanceProgramRemote(remoteUserId, updated);
       return;
     }
 
@@ -342,19 +413,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     await AsyncStorage.setItem(ACTIVE_PROG_KEY, JSON.stringify(updated));
     setActiveProgram(updated);
-  }, [activeProgram, getProgram]);
+    if (remoteUserId) advanceProgramRemote(remoteUserId, updated);
+  }, [activeProgram, getProgram, remoteUserId]);
 
   const abandonProgram = useCallback(async () => {
+    const abandonedId = activeProgram?.programId;
     await AsyncStorage.removeItem(ACTIVE_PROG_KEY);
     setActiveProgram(null);
-  }, []);
+    if (remoteUserId && abandonedId) abandonProgramRemote(remoteUserId, abandonedId);
+  }, [activeProgram, remoteUserId]);
 
   // ── Workout logs ──────────────────────────────────────────────────────────
   const saveWorkoutLog = useCallback(async (log: WorkoutLog) => {
     const updated = [...workoutLogs, log];
     await AsyncStorage.setItem(WORKOUT_LOGS_KEY, JSON.stringify(updated));
     setWorkoutLogs(updated);
-  }, [workoutLogs]);
+    if (remoteUserId) insertWorkoutLogRemote(remoteUserId, log);
+  }, [workoutLogs, remoteUserId]);
 
   const getLastExerciseSets = useCallback((exerciseId: string): SetLog[] => {
     for (let i = workoutLogs.length - 1; i >= 0; i--) {

@@ -4,7 +4,7 @@
     "slug": "TheChangePtStudio",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/müşteri-uygulama-icon.png",
     "scheme": "thechangeptstudio",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
@@ -13,10 +13,9 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0D0D0D",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#000000",
+        "foregroundImage": "./assets/images/musteri-uygulama-adaptive-icon.png",
+        "monochromeImage": "./assets/images/musteri-uygulama-monochrome-icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -37,12 +36,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo.png",
+          "image": "./assets/images/musteri-uygulama-splash-icon.png",
           "imageWidth": 280,
           "resizeMode": "contain",
-          "backgroundColor": "#0D0D0D",
+          "backgroundColor": "#000000",
           "dark": {
-            "backgroundColor": "#0D0D0D"
+            "backgroundColor": "#000000"
           }
         }
       ]
@@ -50,6 +49,10 @@
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": false
+    },
+    "extra": {
+      "appVariant": "customer",
+      "router": {}
     }
   }
 }

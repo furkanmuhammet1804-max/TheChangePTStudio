@@ -30,10 +30,12 @@ import {
 import { borderRadius, colors, shadows, spacing, typography } from '@/src/theme';
 import { NotificationPreferences } from '@/src/types';
 import { hapticTap } from '@/src/utils/haptics';
+import { signOut, useAuth } from '@/src/services/authService';
 import { confirmAction, notify } from '@/src/utils/notify';
 
 export default function SettingsScreen() {
   const { resetAll } = useUser();
+  const auth = useAuth();
   const [prefs, setPrefs] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFS);
   const healthProviders = getHealthProviders();
 
@@ -110,6 +112,13 @@ export default function SettingsScreen() {
     if (!ok) return;
     await resetAll();
     router.replace('/onboarding');
+  };
+
+  const handleSignOut = async () => {
+    const ok = await confirmAction('Çıkış Yap', 'Hesabından çıkış yapmak istiyor musun?');
+    if (!ok) return;
+    await signOut();
+    router.replace('/auth/login');
   };
 
   return (
@@ -213,6 +222,25 @@ export default function SettingsScreen() {
             onPress={() => notify('Kullanım Şartları', 'Kullanım şartları mağaza yayınından önce eklenecek.')}
           />
         </View>
+
+        {/* Hesap (canlı modda) */}
+        {auth.mode === 'remote' && auth.account && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Hesap</Text>
+            <SettingsRow
+              icon="person-outline"
+              label={auth.account.fullName || 'Üye'}
+              badge={auth.account.email}
+              onPress={() => {}}
+            />
+            <SettingsRow
+              icon="log-out-outline"
+              label="Çıkış Yap"
+              danger
+              onPress={handleSignOut}
+            />
+          </View>
+        )}
 
         {/* Veri */}
         <View style={styles.card}>

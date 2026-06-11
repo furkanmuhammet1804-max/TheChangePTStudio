@@ -80,7 +80,7 @@ function Sidebar({ pathname }: { pathname: string }) {
     <View style={styles.sidebar}>
       {/* Brand */}
       <View style={styles.brand}>
-        <BrandLogo height={36} />
+        <BrandLogo width={186} />
         <Text style={styles.brandSub}>YÖNETİM PANELİ</Text>
       </View>
 
@@ -136,7 +136,7 @@ function TopBar({ showBrand }: { showBrand: boolean }) {
     <View style={styles.topBar}>
       {showBrand ? (
         <View style={styles.topBarBrand}>
-          <BrandLogo height={22} />
+          <BrandLogo height={28} />
           <Text style={styles.topBarTitle} numberOfLines={1}>· Admin</Text>
         </View>
       ) : (
@@ -224,12 +224,20 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: spacing.sm,
     paddingHorizontal: spacing.sm,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     marginBottom: spacing.md,
   },
-  brandSub: { ...typography.caption, color: colors.accent, letterSpacing: 1.2 },
+  brandSub: {
+    ...typography.caption,
+    color: colors.accent,
+    letterSpacing: 2.4,
+    fontWeight: '700',
+    // Alt başlık logonun sol kenarıyla aynı hizada başlar
+    paddingLeft: 2,
+  },
 
   nav: { gap: 2, flex: 1 },
   navItem: {

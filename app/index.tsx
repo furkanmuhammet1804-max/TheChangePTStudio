@@ -8,9 +8,10 @@ import {
   View,
 } from 'react-native';
 import { LandingPage } from '@/src/components/landing/LandingPage';
-import { BrandLogo, LOGO_ASPECT_RATIO } from '@/src/components/ui/BrandLogo';
+import { BrandLogo } from '@/src/components/ui/BrandLogo';
 import { useUser } from '@/src/contexts/UserContext';
 import { isAdminApp } from '@/src/lib/appVariant';
+import { useAuth } from '@/src/services/authService';
 import { colors, spacing, typography } from '@/src/theme';
 
 const { width } = Dimensions.get('window');
@@ -25,12 +26,16 @@ export default function IndexScreen() {
 
 function CustomerSplash() {
   const { isOnboardingComplete, loading } = useUser();
+  const auth = useAuth();
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.88)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
 
+  // Canlı modda hesap zorunludur: oturum yoksa giriş ekranına yönlendirilir
+  const needsLogin = auth.mode === 'remote' && !auth.account;
+
   useEffect(() => {
-    if (loading) return;
+    if (loading || !auth.ready) return;
 
     Animated.sequence([
       Animated.parallel([
@@ -55,7 +60,9 @@ function CustomerSplash() {
     ]).start();
 
     const timeout = setTimeout(() => {
-      if (isOnboardingComplete) {
+      if (needsLogin) {
+        router.replace('/auth/login');
+      } else if (isOnboardingComplete) {
         router.replace('/(tabs)');
       } else {
         router.replace('/onboarding');
@@ -63,12 +70,12 @@ function CustomerSplash() {
     }, 2400);
 
     return () => clearTimeout(timeout);
-  }, [loading, isOnboardingComplete, opacity, scale, taglineOpacity]);
+  }, [loading, auth.ready, needsLogin, isOnboardingComplete, opacity, scale, taglineOpacity]);
 
   return (
     <View style={styles.container}>
       <Animated.View style={{ opacity, transform: [{ scale }] }}>
-        <BrandLogo height={(width * 0.72) / LOGO_ASPECT_RATIO} />
+        <BrandLogo width={width * 0.72} />
       </Animated.View>
 
       <Animated.Text style={[styles.tagline, { opacity: taglineOpacity }]}>

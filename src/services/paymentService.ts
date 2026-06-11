@@ -11,7 +11,10 @@
  *    gerçekten açılır ve abonelik kaydı (başlangıç/bitiş tarihli) oluşturulur.
  *  - Yarın: gövde RevenueCat satın alma çağrısına dönüşür; ekran kodu değişmez.
  */
+import { getSupabase, isSupabaseConfigured } from '@/src/lib/supabase';
 import { grantPremium, SUBSCRIPTION_PLANS, DEVICE_USER_ID, getAppState } from '@/src/services/appStore';
+import { getAuthState } from '@/src/services/authService';
+import { purchasePremiumRemote } from '@/src/services/userDataService';
 import { SubscriptionPlan, SubscriptionPlanId } from '@/src/types/admin';
 
 export type PaymentProvider = 'local' | 'revenuecat';
@@ -43,7 +46,20 @@ export async function purchasePlan(planId: SubscriptionPlanId): Promise<Purchase
     return { success: false, planId, error: 'Plan bulunamadı.' };
   }
 
-  // Cihaz kullanıcısı store'a kayıtlıysa abonelik kaydı da oluştur
+  // Canlı mod: üyelik kaydı Supabase'e yazılır (source: app_store/google_play —
+  // gerçek mağaza tahsilatı RevenueCat bağlanınca aynı kayıt yapısını kullanır)
+  if (isSupabaseConfigured()) {
+    const account = getAuthState().account;
+    if (!account) {
+      return { success: false, planId, error: 'Satın almak için önce giriş yapmalısınız.' };
+    }
+    const end = new Date();
+    end.setMonth(end.getMonth() + plan.periodMonths);
+    purchasePremiumRemote(account.id, planId, plan.periodMonths);
+    return { success: true, planId, expiresAt: end.toISOString() };
+  }
+
+  // Yerel mod: cihaz kullanıcısı store'a kayıtlıysa abonelik kaydı da oluştur
   const hasDeviceUser = getAppState().users.some((u) => u.id === DEVICE_USER_ID);
   const subscription = hasDeviceUser ? grantPremium(DEVICE_USER_ID, planId) : undefined;
 
@@ -56,5 +72,17 @@ export async function purchasePlan(planId: SubscriptionPlanId): Promise<Purchase
 
 /** Mağaza aboneliklerini geri yükleme — RevenueCat restorePurchases'a bağlanacak */
 export async function restorePurchases(): Promise<boolean> {
+  if (isSupabaseConfigured()) {
+    const account = getAuthState().account;
+    if (!account) return false;
+    const { data } = await getSupabase()
+      .from('memberships')
+      .select('id')
+      .eq('user_id', account.id)
+      .eq('status', 'premium')
+      .gt('ends_at', new Date().toISOString())
+      .limit(1);
+    return (data?.length ?? 0) > 0;
+  }
   return getAppState().users.find((u) => u.id === DEVICE_USER_ID)?.membership === 'premium';
 }
